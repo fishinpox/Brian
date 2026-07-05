@@ -1,0 +1,182 @@
+classDiagram
+
+    %% ── Calendar Query Handler (orchestrates the calendar view) ─────
+    class GetCalendarViewQueryHandler {
+        -db ICalendarDbContext
+        -holodexClient IHolodexApiClient
+        -currentUser ICurrentUserService
+        -logger ILogger
+        +Handle(query, ct) Result~CalendarViewDto~
+        -TryRefreshHolodexDataAsync(profileId, streamEvents, ct) Task
+        -MapStatus(status) EventStatus
+    }
+
+    %% ── Holodex Integration (Refit client) ──────────────────────────
+    class IHolodexApiClient {
+        <<interface>>
+        +GetLiveVideosAsync(apiKey) List~HolodexVideoDto~
+        +GetUpcomingVideosAsync(apiKey, status, limit) List~HolodexVideoDto~
+    }
+
+    class HolodexVideoDto {
+        +Id string
+        +Title string
+        +Thumbnail string
+        +Channel_id string
+        +Status string
+        +Start_scheduled string
+        +Start_actual string
+        +End_actual string
+    }
+
+    %% ── Event Command Handlers ──────────────────────────────────────
+    class CreatePersonalEventCommandHandler {
+        -db ICalendarDbContext
+        -currentUser ICurrentUserService
+        +Handle(command, ct) Result~Guid~
+    }
+
+    class UpdatePersonalEventCommandHandler {
+        -db ICalendarDbContext
+        -currentUser ICurrentUserService
+        +Handle(command, ct) Result~Unit~
+    }
+
+    class DeletePersonalEventCommandHandler {
+        -db ICalendarDbContext
+        +Handle(command, ct) Result~Unit~
+    }
+
+    %% ── Reminder Command Handlers ───────────────────────────────────
+    class SetReminderCommandHandler {
+        -db ICalendarDbContext
+        -currentUser ICurrentUserService
+        +Handle(command, ct) Result~Guid~
+    }
+
+    class DismissReminderCommandHandler {
+        -db ICalendarDbContext
+        +Handle(command, ct) Result~Unit~
+    }
+
+    %% ── Reminder Dispatch (Hangfire job) ────────────────────────────
+    class ReminderDispatchJob {
+        -db ICalendarDbContext
+        -notifier IReminderNotificationService
+        -logger ILogger
+        +ExecuteAsync(ct) Task
+    }
+
+    class IReminderNotificationService {
+        <<interface>>
+        +SendReminderAsync(profileId, eventTitle, method, ct) Task
+    }
+
+    %% ── Domain Entities ─────────────────────────────────────────────
+    class PersonalEvent {
+        +Id guid
+        +ProfileId guid
+        +Title string
+        +Description string
+        +Location string
+        +StartAt DateTimeOffset
+        +EndAt DateTimeOffset
+        +IsAllDay bool
+        +RecurrenceRule string
+        +Status EventStatus
+        +Create()$ PersonalEvent
+        +Update() void
+    }
+
+    class StreamEvent {
+        +Id guid
+        +VTuberProfileId guid
+        +Platform StreamPlatform
+        +PlatformVideoId string
+        +Title string
+        +ThumbnailUrl string
+        +Description string
+        +ScheduledStart DateTimeOffset
+        +ActualStart DateTimeOffset
+        +ActualEnd DateTimeOffset
+        +Status EventStatus
+        +PeakViewers int
+        +VodUrl string
+        +IsExternallySourced bool
+        +Create()$ StreamEvent
+    }
+
+    class Reminder {
+        +Id guid
+        +PersonalEventId guid
+        +ProfileId guid
+        +TriggerAt DateTimeOffset
+        +Method ReminderMethod
+        +IsSent bool
+        +SentAt DateTimeOffset
+        +Create()$ Reminder
+    }
+
+    class ExternalCredential {
+        +Id guid
+        +ProfileId guid
+        +Provider string
+        +EncryptedValue string
+        +ExpiresAt DateTimeOffset
+        +Create()$ ExternalCredential
+    }
+
+    class EventStatus {
+        <<enumeration>>
+        Upcoming
+        Live
+        Past
+        Cancelled
+    }
+
+    class ReminderMethod {
+        <<enumeration>>
+        Email
+        Push
+        InApp
+    }
+
+    class StreamPlatform {
+        <<enumeration>>
+        YouTube
+        Twitch
+        Holodex
+        Other
+    }
+
+    %% ── DTOs ────────────────────────────────────────────────────────
+    class CalendarViewDto {
+        +PersonalEvents List~PersonalEventDto~
+        +StreamEvents List~StreamEventDto~
+    }
+
+    %% ── Relationships ───────────────────────────────────────────────
+    GetCalendarViewQueryHandler --> IHolodexApiClient : fetches live and upcoming
+    GetCalendarViewQueryHandler --> ICalendarDbContext : reads PersonalEvents, StreamEvents, ExternalCredentials
+    GetCalendarViewQueryHandler --> CalendarViewDto : assembles
+
+    IHolodexApiClient --> HolodexVideoDto : returns
+
+    CreatePersonalEventCommandHandler --> PersonalEvent : creates
+    UpdatePersonalEventCommandHandler --> PersonalEvent : updates
+    DeletePersonalEventCommandHandler --> PersonalEvent : deletes
+
+    SetReminderCommandHandler --> Reminder : creates
+    DismissReminderCommandHandler --> Reminder : deletes
+
+    ReminderDispatchJob --> IReminderNotificationService : dispatches via
+    ReminderDispatchJob --> Reminder : polls due reminders
+
+    PersonalEvent --> EventStatus
+    PersonalEvent --> Reminder : has
+    StreamEvent --> EventStatus
+    StreamEvent --> StreamPlatform
+    Reminder --> ReminderMethod
+
+    CalendarViewDto --> PersonalEvent : contains
+    CalendarViewDto --> StreamEvent : contains

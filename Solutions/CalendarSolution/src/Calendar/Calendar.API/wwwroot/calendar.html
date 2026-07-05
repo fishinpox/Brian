@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brian - Calendar</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
+        .header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; color: #333; }
+        .welcome { font-size: 13px; color: #666; margin-top: 2px; }
+        .btn-logout { padding: 8px 16px; background: none; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 13px; color: #666; transition: background 0.2s; }
+        .btn-logout:hover { background: #f0f0f0; }
+        .content { max-width: 640px; margin: 40px auto; padding: 0 24px; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 24px; }
+        .card h2 { font-size: 16px; color: #333; margin-bottom: 16px; }
+        .event-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .event-row:last-child { border-bottom: none; }
+        .event-title { font-size: 14px; color: #333; font-weight: 500; }
+        .event-meta { font-size: 12px; color: #999; margin-top: 2px; }
+        .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; }
+        .badge-personal { background: #e8f0fe; color: #1a73e8; }
+        .badge-live { background: #fce8e6; color: #d93025; }
+        .badge-upcoming { background: #fef7e0; color: #b06000; }
+        .loading, .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
+        .connections-card { margin-top: 16px; }
+        .connection-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        .connection-name { font-size: 14px; color: #333; font-weight: 500; }
+        .btn-connect { padding: 8px 16px; background: #4285f4; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        .btn-connect:hover { background: #3367d6; }
+        .badge-connected { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background: #e6f4ea; color: #188038; text-transform: uppercase; }
+        .connect-form { display: none; gap: 8px; margin-top: 10px; }
+        .connect-form input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        .connect-form button { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; }
+        .connect-save { background: #4285f4; color: #fff; }
+        .connect-cancel { background: none; border: 1px solid #ddd; color: #666; }
+        .connect-error { color: #d93025; font-size: 12px; margin-top: 6px; display: none; }
+        .connection-status { font-size: 12px; color: #666; margin-top: 2px; }
+        .manage-link { font-size: 12px; color: #4285f4; cursor: pointer; text-decoration: underline; margin-left: 8px; }
+        .picklist { display: none; margin-top: 12px; }
+        .select-all-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .select-all-row button { background: none; border: none; color: #4285f4; font-size: 13px; cursor: pointer; padding: 0; }
+        .channel-list { max-height: 240px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; margin-bottom: 12px; }
+        .channel-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; cursor: pointer; }
+        .channel-row:last-child { border-bottom: none; }
+        .channel-photo { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .picklist-actions { display: flex; gap: 8px; }
+        .picklist-save { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
+        .picklist-skip { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: none; color: #666; }
+        .picklist-note { font-size: 12px; color: #999; margin-top: 8px; }
+        .picklist-search { display: flex; gap: 8px; margin-bottom: 12px; }
+        .picklist-search input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+        .picklist-search button { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Brian</h1>
+            <p class="welcome" id="welcome"></p>
+        </div>
+        <button class="btn-logout" id="logoutBtn">Sign Out</button>
+    </div>
+
+    <div class="content">
+        <div class="card" id="eventsCard">
+            <h2>Upcoming</h2>
+            <div id="eventsList">
+                <p class="loading">Loading your calendar...</p>
+            </div>
+        </div>
+
+        <div class="card connections-card">
+            <h2>Connect More Accounts</h2>
+
+            <div class="connection-row">
+                <span class="connection-name">Holodex</span>
+                <span class="badge-connected" id="holodexConnected" style="display:none;">Connected</span>
+                <button class="btn-connect" id="holodexConnectBtn">Connect Holodex</button>
+            </div>
+            <p class="connection-status" id="holodexStatusText" style="display:none;">
+                <span id="holodexStatusLabel"></span><span class="manage-link" id="holodexManageLink">Manage</span>
+            </p>
+            <div class="connect-form" id="holodexForm">
+                <input type="text" id="holodexApiKey" placeholder="Holodex API key">
+                <button class="connect-save" id="holodexSaveBtn">Save</button>
+                <button class="connect-cancel" id="holodexCancelBtn">Cancel</button>
+            </div>
+            <p class="connect-error" id="holodexError"></p>
+
+            <div class="picklist" id="holodexPicklist">
+                <div class="picklist-search">
+                    <input type="text" id="holodexSearchInput" placeholder="Search Holodex for a VTuber...">
+                    <button type="button" id="holodexSearchBtn">Search</button>
+                </div>
+                <div class="select-all-row">
+                    <span class="connection-status" style="margin:0;">Select the VTubers to follow</span>
+                    <button type="button" id="holodexSelectAllBtn">Select all / none</button>
+                </div>
+                <div class="channel-list" id="holodexChannelList">
+                    <p class="loading">Loading your followed VTubers...</p>
+                </div>
+                <div class="picklist-actions">
+                    <button class="picklist-save" id="holodexPicklistSaveBtn">Save</button>
+                    <button class="picklist-skip" id="holodexPicklistSkipBtn">Skip for now</button>
+                </div>
+                <p class="picklist-note">Your VTuber events will appear on your calendar shortly after saving.</p>
+                <p class="connect-error" id="holodexPicklistError"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        let token = params.get('token') || localStorage.getItem('token');
+
+        const IDENTITY_LOGIN_URL = 'https://localhost:7001/login.html';
+
+        if (!token) {
+            window.location.href = IDENTITY_LOGIN_URL;
+        } else {
+            localStorage.setItem('token', token);
+            if (params.has('token')) {
+                window.history.replaceState({}, '', '/calendar.html');
+            }
+        }
+
+        function decodeJwt(t) {
+            try {
+                const payload = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+                return JSON.parse(atob(padded));
+            } catch (e) {
+                return null;
+            }
+        }
+
+        const claims = decodeJwt(token);
+        document.getElementById('welcome').textContent = claims && claims.unique_name
+            ? `Welcome, @${claims.unique_name}`
+            : '';
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = IDENTITY_LOGIN_URL;
+        });
+
+        function formatDateTime(iso) {
+            const d = new Date(iso);
+            return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        }
+
+        async function loadCalendar() {
+            const list = document.getElementById('eventsList');
+
+            const from = new Date();
+            from.setHours(0, 0, 0, 0);
+            const to = new Date(from);
+            to.setDate(to.getDate() + 30);
+
+            const res = await fetch(`/api/calendar?from=${from.toISOString()}&to=${to.toISOString()}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (res.status === 401) {
+                localStorage.removeItem('token');
+                window.location.href = IDENTITY_LOGIN_URL;
+                return;
+            }
+
+            if (!res.ok) {
+                list.innerHTML = '<p class="empty">Failed to load your calendar.</p>';
+                return;
+            }
+
+            const data = await res.json();
+            const items = [
+                ...data.personalEvents.map(e => ({
+                    title: e.title,
+                    when: e.startAt,
+                    badge: '<span class="badge badge-personal">Personal</span>'
+                })),
+                ...data.streamEvents.map(e => ({
+                    title: e.title,
+                    when: e.scheduledStart,
+                    badge: e.isLive
+                        ? '<span class="badge badge-live">Live</span>'
+                        : `<span class="badge badge-upcoming">${e.platform}</span>`
+                }))
+            ].sort((a, b) => new Date(a.when) - new Date(b.when));
+
+            if (items.length === 0) {
+                list.innerHTML = '<p class="empty">Nothing on your calendar in the next 30 days.</p>';
+                return;
+            }
+
+            list.innerHTML = items.map(item => `
+                <div class="event-row">
+                    <div>
+                        <div class="event-title">${item.title}</div>
+                        <div class="event-meta">${formatDateTime(item.when)}</div>
+                    </div>
+                    ${item.badge}
+                </div>
+            `).join('');
+        }
+
+        loadCalendar();
+
+        const HOLODEX_API = 'https://localhost:7009';
+        let holodexChannels = [];
+
+        function showConnectedStatus(followedCount) {
+            document.getElementById('holodexConnected').style.display = 'inline-block';
+            document.getElementById('holodexConnectBtn').style.display = 'none';
+            const label = followedCount === 1 ? 'VTuber' : 'VTubers';
+            document.getElementById('holodexStatusLabel').textContent = `Following ${followedCount} ${label}. `;
+            document.getElementById('holodexStatusText').style.display = 'block';
+        }
+
+        async function loadHolodexConnectionState() {
+            try {
+                const res = await fetch(HOLODEX_API + '/api/holodex/status', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+
+                const status = await res.json();
+                if (!status.hasCredential) return;
+
+                document.getElementById('holodexConnected').style.display = 'inline-block';
+                document.getElementById('holodexConnectBtn').style.display = 'none';
+
+                if (status.followedCount === 0) {
+                    await openHolodexPicklist();
+                } else {
+                    showConnectedStatus(status.followedCount);
+                }
+            } catch (e) {
+                // Holodex service unreachable - leave the connect button as-is
+            }
+        }
+
+        document.getElementById('holodexConnectBtn').addEventListener('click', () => {
+            document.getElementById('holodexForm').style.display = 'flex';
+            document.getElementById('holodexConnectBtn').style.display = 'none';
+        });
+
+        document.getElementById('holodexCancelBtn').addEventListener('click', () => {
+            document.getElementById('holodexForm').style.display = 'none';
+            document.getElementById('holodexConnectBtn').style.display = 'inline-block';
+            document.getElementById('holodexError').style.display = 'none';
+            document.getElementById('holodexApiKey').value = '';
+        });
+
+        document.getElementById('holodexSaveBtn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('holodexError');
+            errorEl.style.display = 'none';
+
+            const apiKey = document.getElementById('holodexApiKey').value.trim();
+            if (!apiKey) return;
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/credential', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ apiKey })
+            });
+
+            if (!res.ok) {
+                errorEl.textContent = 'Could not save your Holodex API key. Please check it and try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            document.getElementById('holodexForm').style.display = 'none';
+            document.getElementById('holodexConnected').style.display = 'inline-block';
+            await openHolodexPicklist();
+        });
+
+        function renderHolodexChannelList(emptyMessage) {
+            const list = document.getElementById('holodexChannelList');
+
+            if (holodexChannels.length === 0) {
+                list.innerHTML = `<p class="loading">${emptyMessage}</p>`;
+                return;
+            }
+
+            list.innerHTML = holodexChannels.map(c => `
+                <label class="channel-row">
+                    <input type="checkbox" class="holodex-channel-check" value="${c.channelId}" ${c.isFollowed ? 'checked' : ''}>
+                    ${c.photoUrl ? `<img src="${c.photoUrl}" class="channel-photo">` : ''}
+                    <span>${c.englishName || c.name}</span>
+                </label>
+            `).join('');
+        }
+
+        async function openHolodexPicklist() {
+            const errorEl = document.getElementById('holodexPicklistError');
+            errorEl.style.display = 'none';
+            document.getElementById('holodexPicklist').style.display = 'block';
+            document.getElementById('holodexChannelList').innerHTML = '<p class="loading">Loading your followed VTubers...</p>';
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/followed', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!res.ok) {
+                document.getElementById('holodexChannelList').innerHTML = '';
+                errorEl.textContent = 'Could not load your followed VTubers.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            holodexChannels = await res.json();
+            renderHolodexChannelList("You're not following any VTubers yet — search above to add some.");
+        }
+
+        document.getElementById('holodexManageLink').addEventListener('click', () => {
+            openHolodexPicklist();
+        });
+
+        async function searchHolodexChannels() {
+            const errorEl = document.getElementById('holodexPicklistError');
+            errorEl.style.display = 'none';
+
+            const term = document.getElementById('holodexSearchInput').value.trim();
+            if (term.length < 2) return;
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/search?q=' + encodeURIComponent(term), {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!res.ok) {
+                errorEl.textContent = 'Could not search Holodex. Please try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const results = await res.json();
+            const existingIds = new Set(holodexChannels.map(c => c.channelId));
+            const newOnes = results.filter(c => !existingIds.has(c.channelId));
+            holodexChannels = holodexChannels.concat(newOnes);
+
+            if (holodexChannels.length === 0) {
+                errorEl.textContent = 'No VTubers found for that search.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            renderHolodexChannelList('No VTubers found for that search.');
+        }
+
+        document.getElementById('holodexSearchBtn').addEventListener('click', searchHolodexChannels);
+        document.getElementById('holodexSearchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchHolodexChannels();
+            }
+        });
+
+        document.getElementById('holodexSelectAllBtn').addEventListener('click', () => {
+            const boxes = document.querySelectorAll('.holodex-channel-check');
+            const allChecked = Array.from(boxes).every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
+        });
+
+        document.getElementById('holodexPicklistSkipBtn').addEventListener('click', () => {
+            document.getElementById('holodexPicklist').style.display = 'none';
+        });
+
+        document.getElementById('holodexPicklistSaveBtn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('holodexPicklistError');
+            errorEl.style.display = 'none';
+
+            const selectedIds = Array.from(document.querySelectorAll('.holodex-channel-check:checked')).map(cb => cb.value);
+            const selected = holodexChannels.filter(c => selectedIds.includes(c.channelId));
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/followed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ channels: selected })
+            });
+
+            if (!res.ok) {
+                errorEl.textContent = 'Failed to save your selected VTubers. Please try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const saved = await res.json();
+            document.getElementById('holodexPicklist').style.display = 'none';
+            showConnectedStatus(saved.count);
+        });
+
+        loadHolodexConnectionState();
+    </script>
+</body>
+</html>

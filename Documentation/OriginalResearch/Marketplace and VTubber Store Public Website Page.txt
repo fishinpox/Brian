@@ -1,0 +1,20 @@
+Marketplace and VTubber Store Public Website Page
+
+Ability to switch profiles to track a private life with work and their public persona's.
+The ability to sell a digital calendar that provides a bunch of services and features not found anywhere else.
+Share a schedule to fans of where and when to watch
+Ability to share a soon-to-be announced date and communications between friends, including media sharing such as thumbnails
+A single source solution to dealing with a Manager regardless if the Vtuber is inside an Agency or not.
+A centralized source for Fans to track and follow and watch them everywhere on social media.
+This is the aggregator feature such as the website, "Carrd" or a free tier subscription to Patreon
+A digital storefront that asset creators can make for vtubers.
+Vgen, asset shop for vtubers: https://vgen.co/
+Skeb: Japan's version of Vgen, Anonymous with no communicate. Vtuber types prompt and price to pay, and any artist picks from the stack and delivers the prompt. No direct communication is involved. https://skeb.jp/
+Future Features that the vtuber can enable, which is to monetize, and communicate directly to their exclusive fanbase.
+Youtube Highlight channels of fans uploading highlighted moments to a Vtuber's stream.
+https://marshmallow-qa.com/ Marshmallo-QA: An anonymous Question-Answer questionnaire that gives the vtuber to see a list of questions and choose to answer them. Vtuber does not see who asked the question, but the fan gets notification when their question is answered by vtuber.
+Patreon private vods sold only to those who pay certain tiers.
+Short and Long Term polls.
+Direct messages/videos/calls/asset sharing to VIP Fans to celebrate a birthday or special holiday.
+Ability to turn on and off a private feature list such as participating in a chat room for only Fan VIP's and VIP's get access to exclusive content.
+Vtuber decides what features are available at what tiers for the Fan to pay to access.

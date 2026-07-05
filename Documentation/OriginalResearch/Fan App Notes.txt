@@ -1,0 +1,79 @@
+
+
+Fan App (Mobile-First for General Audience/Fans)
+Unified calendar with smart notifications for streams, events, uploads, merch drops, and personalized reminders.
+Multi-platform content aggregation (YouTube, Twitch, Twitter/X, etc.) with Holodex-style multiview and clip browsing.
+Personalized feed of creator content, fan art, clips, and community highlights.
+Community forums, topic groups, peer chat/voice rooms, and co-watching features (Discord-like).
+Interactive tools: polls for stream ideas, Q&A submission, fan content upload/share with spotlight options.
+Gamification: badges, streaks, points for attendance/contributions, loyalty rewards.
+Membership/perks hub: Patreon-style tier benefits, exclusive content, virtual gifts.
+Anonymous safe Q&A (Marshmallow-qa style) with moderation.
+Event RSVPs, sign-ups, and virtual meet-and-greet ticketing (SignupGenius-inspired).
+Content library: replays, archives, wallpapers, lore docs.
+Wellness tools: usage trackers, break prompts, healthy fandom reminders.
+Commission/browse fan art and VTuber assets marketplace (VGen + Pixiv style).
+Simple profile, friend connections, and discovery of similar fans.
+Offline support, widgets, natural language quick actions, and cross-app sync.
+
+reddit.com
+Creator / VTuber App (Mobile + Desktop-Focused for Individual Influencers)
+Drag-and-drop scheduling dashboard with AI auto-scheduling, availability windows, and cross-platform auto-posting.
+Built-in calendar unification, time-blocking, Pomodoro/focus mode, and workload balancing.
+Audience insights, analytics, superfan identification, and engagement reports.
+Content management: upload exclusives, batch Q&A, poll creation, fan content approval.
+Live streaming tools with moderated chat, AMA support, and virtual event hosting.
+Membership & monetization: tiered subscriptions (Patreon-style), one-time payments, merch integration, virtual gifts.
+Community management: Discord-like server tools, roles, moderation, announcements.
+Safe anonymous Q&A inbox with filtering.
+Fan art/commission management and marketplace integration (VGen studio).
+Simple portfolio/Carrd-style profile builder for links and showcases.
+Task & project management for personal workflow (Trello/Kanban, Todoist-style lists, subtasks).
+Habits tracker, daily planner, recurring tasks, and neurodivergent/ADHD support tools.
+AI assistant for drafting posts, summarizing feedback, prioritizing tasks.
+Behind-the-scenes sharing with boundary controls and transparency tools.
+Desktop app for heavy content creation, editing, and multi-stream management.
+
+patreon.com
+Agency / CRM App (Dedicated for Vtuber's Company / Teams)
+Full CRM for managing multiple VTubers: contacts, deals, contracts, talent profiles (Twenty CRM / SuiteCRM inspired).
+Advanced team scheduling, workload views, and resource allocation across creators.
+Centralized analytics dashboard for all managed VTubers' performance and fan data.
+Enterprise collaboration: workspaces, permissions, assignments, comments (
+@mentions
+).
+Automated workflows, rules, bulk actions, and 200+ integrations.
+HR/operations tools: time tracking, employee scheduling, checklists, forms (Connecteam style).
+Talent onboarding, training modules, document management, and performance reporting.
+Monetization oversight: aggregated memberships, payouts, merch, sponsorship tracking.
+Advanced moderation and compliance tools across all linked communities.
+Custom databases, wikis, OKRs, portfolios, and reporting (Notion/ClickUp style).
+Secure data import/export, backups, SSO, and enterprise-grade security.
+Agency-wide calendar and event coordination with sign-up management.
+
+connecteam.com
+Manager App / Module (Crosses Desktop + Mobile; One Manager Handles Multiple VTubers)
+Multi-VTuber oversight dashboard: individual and aggregated calendars, schedules, and analytics.
+Task delegation, approvals, and project tracking across creators (Asana/Trello boards).
+Shared workspaces for collaboration without full agency setup.
+Communication hub: announcements, team chat, updates.
+Booking/scheduling links, meeting tools, and event management.
+Simplified CRM views for talent relationships and opportunities.
+Performance monitoring, reports, and AI-suggested optimizations.
+Access to fan insights and community health metrics for managed creators.
+Desktop app support for deeper planning and multi-view management.
+Shared / Bridging Features (Sync Across All Apps)
+Real-time sync of calendars, tasks, events, and notifications.
+Modular toggles: enable/disable sections (team features, ADHD tools, monetization) to avoid overload.
+AI across apps: scheduling, summarization, task suggestions, content ideas.
+Unified inbox for tasks, messages, Q&A, emails.
+Custom fields, tags, views (Kanban, Timeline, Database, Calendar, etc.).
+Multi-hierarchy organization and powerful search/filters.
+Gamification, habits, rituals, and motivational elements shared where appropriate.
+Data privacy controls, boundary settings, and wellness prompts.
+Integrations with Patreon, Discord, YouTube, Twitch, etc.
+Cross-app interactions: e.g., fan RSVPs feed creator calendar; agency approvals route to managers.
+Desktop App Emphasis
+Heavy workflow for creators/managers: content editing, multi-view streaming, advanced dashboards, whiteboards, knowledge bases.
+Offline-first with full sync.
+Overall ArchitectureAll apps form one ecosystem under a unified backend with role-based access. Fans get lightweight engagement; creators get productivity + community tools; managers get oversight; agencies get enterprise CRM/HR depth. This merges productivity super-app capabilities (Todoist/TickTick/Notion/etc.) with creator tools (Patreon/Discord/Holodex/VGen/etc.) while reducing parasocial gaps through community emphasis and boundaries.

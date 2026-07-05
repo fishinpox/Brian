@@ -1,0 +1,109 @@
+erDiagram
+
+    APPLICATION_USER {
+        guid Id PK
+        string Email UK
+        string PasswordHash
+        string PhoneNumber
+    }
+
+    OAUTH_IDENTITY {
+        guid Id PK
+        guid AccountId FK
+        Platform Provider "YouTube, Twitch, Twitter, TikTok, Holodex, Discord, Patreon, Google"
+        string ProviderUserId
+        string EncryptedAccessToken
+        string EncryptedRefreshToken
+        datetimeoffset TokenExpiresAt
+    }
+
+    PROFILE {
+        guid Id PK
+        guid AccountId FK
+        string Username UK
+        string DisplayName
+        string AvatarUrl
+        string Bio
+        bool IsPublic
+        datetimeoffset CreatedAt
+        datetimeoffset UpdatedAt
+    }
+
+    PROFILE_ROLE {
+        guid Id PK
+        guid ProfileId FK
+        UserRole Role "Fan, Creator, Manager, AgencyAdmin"
+        datetimeoffset GrantedAt
+    }
+
+    SESSION {
+        guid Id PK
+        guid AccountId FK
+        guid ProfileId FK
+        string TokenHash
+        datetimeoffset ExpiresAt
+        string IpAddress
+        string UserAgent
+        bool IsRevoked
+    }
+
+    PERSONAL_EVENT {
+        guid Id PK
+        guid ProfileId FK
+        string Title
+        string Description
+        string Location
+        datetimeoffset StartAt
+        datetimeoffset EndAt
+        bool IsAllDay
+        string RecurrenceRule
+        EventStatus Status "Upcoming, Live, Past, Cancelled"
+        datetimeoffset CreatedAt
+        datetimeoffset UpdatedAt
+    }
+
+    REMINDER {
+        guid Id PK
+        guid PersonalEventId FK
+        guid ProfileId FK
+        datetimeoffset TriggerAt
+        ReminderMethod Method "Email, Push, InApp"
+        bool IsSent
+        datetimeoffset SentAt
+    }
+
+    STREAM_EVENT {
+        guid Id PK
+        guid VTuberProfileId FK
+        StreamPlatform Platform "YouTube, Twitch, Holodex, Other"
+        string PlatformVideoId
+        string Title
+        string ThumbnailUrl
+        string Description
+        datetimeoffset ScheduledStart
+        datetimeoffset ActualStart
+        datetimeoffset ActualEnd
+        EventStatus Status
+        int PeakViewers
+        string VodUrl
+        bool IsExternallySourced
+        datetimeoffset CreatedAt
+        datetimeoffset UpdatedAt
+    }
+
+    EXTERNAL_CREDENTIAL {
+        guid Id PK
+        guid ProfileId FK
+        string Provider
+        string EncryptedValue
+        datetimeoffset ExpiresAt
+    }
+
+    APPLICATION_USER ||--o{ OAUTH_IDENTITY : "logs in via"
+    APPLICATION_USER ||--o{ PROFILE : "owns"
+    APPLICATION_USER ||--o{ SESSION : "has"
+    PROFILE ||--o| SESSION : "active in"
+    PROFILE ||--o{ PROFILE_ROLE : "assigned"
+    PROFILE ||--o{ PERSONAL_EVENT : "owns"
+    PROFILE ||--o{ EXTERNAL_CREDENTIAL : "stores"
+    PERSONAL_EVENT ||--o{ REMINDER : "triggers"

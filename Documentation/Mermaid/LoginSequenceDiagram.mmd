@@ -1,0 +1,56 @@
+sequenceDiagram
+
+    actor User
+    participant FE as Frontend
+    participant Auth as Identity API
+    participant DB as Database
+
+    rect rgb(245, 230, 255)
+        Note over User,DB: Email / Password Registration
+        User->>FE: Fill email, password, phone
+        FE->>Auth: POST /api/auth/register {email, password, phone}
+        Auth->>DB: Create ApplicationUser (ASP.NET Identity)
+        DB-->>Auth: {accountId}
+        Auth-->>FE: 201 Created {accountId}
+
+        Note over User,DB: Profile Setup
+        FE->>User: Prompt for username, display name
+        User->>FE: Submit profile details
+        FE->>Auth: POST /api/profiles {username, displayName, avatarUrl, bio}
+        Auth->>DB: Create PROFILE (public-facing only)
+        Auth->>DB: Create PROFILE_ROLE {role: Fan}
+        DB-->>Auth: {profileId}
+        Auth-->>FE: 200 OK {profileId}
+    end
+
+    rect rgb(230, 255, 235)
+        Note over User,DB: Login
+        User->>FE: Enter email and password
+        FE->>Auth: POST /api/auth/login {email, password}
+        Auth->>DB: Validate credentials (ASP.NET Identity)
+        DB-->>Auth: ApplicationUser
+        Auth->>DB: Lookup profiles for account
+        DB-->>Auth: profiles[]
+        Auth->>Auth: Generate JWT (sub=accountId, profile_id, roles[])
+        Auth->>DB: Create SESSION {accountId, profileId, tokenHash}
+        Auth-->>FE: 200 OK {accessToken, refreshToken, profiles[]}
+        FE-->>User: Logged in — redirect to calendar
+    end
+
+    rect rgb(255, 245, 220)
+        Note over User,DB: Profile Selection (multi-profile accounts)
+        User->>FE: Choose different profile
+        FE->>Auth: POST /api/profiles/{id}/activate
+        Auth->>DB: Lookup profile, verify ownership
+        Auth->>Auth: Issue new JWT with updated profile_id
+        Auth-->>FE: 200 OK {accessToken, activeProfile}
+        FE-->>User: Switched profile
+    end
+
+    rect rgb(240, 240, 240)
+        Note over User,DB: Logout
+        User->>FE: Click logout
+        FE->>Auth: POST /api/auth/logout [Authorize]
+        Auth-->>FE: 200 OK
+        FE-->>User: Redirected to login
+    end

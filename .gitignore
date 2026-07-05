@@ -1,0 +1,28 @@
+# Build artifacts
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Claude Code local tooling state
+.claude/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Contains real credentials pasted during setup - never track
+Documentation/HowTo/How to Setup Google Cloud Console
+IdentitySetup/GoogleOAuthClientId.json

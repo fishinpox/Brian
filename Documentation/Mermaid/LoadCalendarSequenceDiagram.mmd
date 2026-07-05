@@ -1,0 +1,97 @@
+sequenceDiagram
+
+    actor User
+    participant FE as Frontend
+    participant API as Calendar API
+    participant Handler as GetCalendarViewQueryHandler
+    participant Holodex as IHolodexApiClient (Refit)
+    participant HolodexAPI as Holodex.net API
+    participant DB as Calendar Database
+    participant Job as ReminderDispatchJob (Hangfire)
+    participant Notifier as Notifications API
+
+    rect rgb(1, 6, 14)
+        Note over User,Notifier: Post-Login Calendar Load (parallel fetch)
+        User->>FE: Login complete — load calendar
+        FE->>API: GET /api/calendar?from={from}&to={to}
+        API->>Handler: GetCalendarViewQuery(from, to)
+
+        par Personal events fetch
+            Handler->>DB: SELECT PersonalEvents WHERE profile_id AND range
+            DB-->>Handler: PersonalEvent[]
+        and Stream events fetch
+            Handler->>DB: SELECT StreamEvents WHERE range
+            DB-->>Handler: StreamEvent[]
+        and Holodex refresh
+            Handler->>DB: Lookup ExternalCredential {profileId, provider=Holodex}
+            DB-->>Handler: {encryptedValue}
+            Handler->>Holodex: GetLiveVideosAsync(apiKey)
+            Holodex->>HolodexAPI: GET /users/live (X-APIKEY header)
+            HolodexAPI-->>Holodex: HolodexVideoDto[]
+            Holodex-->>Handler: live videos
+            Handler->>Holodex: GetUpcomingVideosAsync(apiKey)
+            Holodex->>HolodexAPI: GET /videos?status=upcoming&limit=50
+            HolodexAPI-->>Holodex: HolodexVideoDto[]
+            Holodex-->>Handler: upcoming videos
+            Handler->>DB: Upsert StreamEvents (new or updated)
+        end
+
+        Handler->>Handler: Assemble CalendarViewDto
+        Handler-->>API: Result~CalendarViewDto~
+        API-->>FE: CalendarViewDto {personalEvents[], streamEvents[]}
+        FE-->>User: Render calendar view
+    end
+
+    rect rgb(1, 31, 7)
+        Note over User,Notifier: Create Personal Event
+        User->>FE: Create new event (title, time, location)
+        FE->>API: POST /api/calendar/events {title, startAt, endAt, ...}
+        API->>DB: INSERT PersonalEvent
+        DB-->>API: PersonalEvent {id}
+        API-->>FE: 201 Created {eventId}
+        FE-->>User: Event appears on calendar
+
+        Note over User,Notifier: Set Reminder on Event
+        User->>FE: Add reminder to event
+        FE->>API: POST /api/calendar/events/{eventId}/reminders {triggerAt, method}
+        API->>DB: INSERT Reminder {personalEventId, profileId, triggerAt, method}
+        DB-->>API: Reminder {id}
+        API-->>FE: 200 OK {reminderId}
+    end
+
+    rect rgb(29, 22, 3)
+        Note over User,Notifier: Update / Delete Personal Event
+        User->>FE: Edit or delete event
+        alt Update
+            FE->>API: PUT /api/calendar/events/{id} {title, startAt, endAt, ...}
+            API->>DB: UPDATE PersonalEvent
+            API-->>FE: 204 No Content
+        else Delete
+            FE->>API: DELETE /api/calendar/events/{id}
+            API->>DB: DELETE PersonalEvent
+            API-->>FE: 204 No Content
+        end
+
+        Note over User,Notifier: Dismiss Reminder
+        User->>FE: Remove reminder
+        FE->>API: DELETE /api/calendar/reminders/{reminderId}
+        API->>DB: DELETE Reminder
+        API-->>FE: 204 No Content
+    end
+
+    rect rgb(11, 3, 17)
+        Note over User,Notifier: Reminder Fires (Hangfire cron job)
+        Job->>DB: SELECT Reminders WHERE TriggerAt <= now AND IsSent = false (TAKE 100)
+        DB-->>Job: Reminder[]
+        loop Each due reminder
+            Job->>Notifier: POST /api/notifications/dispatch/reminder {profileId, eventTitle, method}
+            alt Email
+                Notifier->>User: Send reminder email
+            else Push
+                Notifier->>FE: Push notification via SignalR hub
+            else InApp
+                Notifier->>FE: In-app notification via SignalR hub
+            end
+            Job->>DB: UPDATE Reminder SET IsSent=true, SentAt=now
+        end
+    end

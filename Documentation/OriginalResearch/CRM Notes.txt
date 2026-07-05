@@ -1,0 +1,18 @@
+CRM Notes
+
+CRM's goal is to scale from an individual creator all the way up to a large agency such as hololive or nijisanji and interact within the App.
+
+Huge Database, charge monthly for cloud storage space.
+
+Merge in managers having access to a vtuber's public persona and content release scheduling. Allow managers to schedule/modify/update anything and everything from "Carrd" website features per vtuber.
+
+Each vtuber has internal Milestones and metrics to hit based on the Agency's needs.
+The individual Vtuber is typically rewarded for hitting "100,000 followers on Youtube"
+And again, rewarded at 1 Million, 2 Million and so on and the Agency "Grants them a Wish" at each million hit per vtuber.  Use stats to track when these will be hit internally. Build in social blade ( https://socialblade.com/ )
+
+The Agency puts on large projects forcing everyone to participate (EnReco)
+A Vtuber can request the Agency to put on a large scale event for the company vtubers to participate in such as paying server hosting costs for games like Minecraft.
+
+Agency puts on large events at Convention Centers. Requires company wide participation of creating.
+
+Agency's force their vtubers to preplan and reserve studio time to record future songs, content creation for social media (Youtube Shorts, TikTok) birthday lives for each girls.
