@@ -17,5 +17,9 @@ public class CreateProfileCommandValidator : AbstractValidator<CreateProfileComm
 
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Role must be a valid UserRole.");
+
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Password is required.")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters.");
     }
 }

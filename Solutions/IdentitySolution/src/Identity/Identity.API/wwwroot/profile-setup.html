@@ -11,12 +11,17 @@
         h1 { text-align: center; margin-bottom: 8px; color: #333; }
         .subtitle { text-align: center; color: #666; margin-bottom: 24px; font-size: 14px; }
         label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 4px; }
-        input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
         input:focus { outline: none; border-color: #4285f4; }
         .btn-primary { width: 100%; padding: 12px; background: #4285f4; color: #fff; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; transition: background 0.2s; }
         .btn-primary:hover { background: #3367d6; }
         .error { color: #d93025; font-size: 13px; margin-bottom: 12px; display: none; }
-        .hint { font-size: 12px; color: #999; margin-top: -12px; margin-bottom: 16px; }
+        .hint { font-size: 12px; color: #999; margin-top: 4px; margin-bottom: 16px; }
+        .field { margin-bottom: 16px; }
+        .password-wrap { position: relative; }
+        .password-wrap input { padding-right: 40px; }
+        .toggle-password { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #999; font-size: 13px; padding: 4px; }
+        .toggle-password:hover { color: #4285f4; }
     </style>
 </head>
 <body>
@@ -27,12 +32,33 @@
         <div class="error" id="error"></div>
 
         <form id="profileForm">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required placeholder="cool_username" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+">
-            <p class="hint">3-30 characters, letters, numbers, and underscores only</p>
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="cool_username" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+">
+                <p class="hint">3-30 characters, letters, numbers, and underscores only</p>
+            </div>
 
-            <label for="displayName">Fan or Creator Name</label>
-            <input type="text" id="displayName" name="displayName" required placeholder="Your Name">
+            <div class="field">
+                <label for="displayName">Fan or Creator Name</label>
+                <input type="text" id="displayName" name="displayName" required placeholder="Your Name">
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="password-wrap">
+                    <input type="password" id="password" name="password" required placeholder="At least 8 characters" minlength="8">
+                    <button type="button" class="toggle-password" data-target="password">Show</button>
+                </div>
+                <p class="hint">You'll need this to sign in if you ever lose access to Google -- see <a href="/login.html">login.html</a>'s email/password option.</p>
+            </div>
+
+            <div class="field">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="password-wrap">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Re-enter your password" minlength="8">
+                    <button type="button" class="toggle-password" data-target="confirmPassword">Show</button>
+                </div>
+            </div>
 
             <button type="submit" class="btn-primary">Create Profile</button>
         </form>
@@ -43,10 +69,27 @@
         const token = params.get('token');
         if (!token) window.location.href = '/login.html';
 
+        document.querySelectorAll('.toggle-password').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                const showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                btn.textContent = showing ? 'Show' : 'Hide';
+            });
+        });
+
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const errorEl = document.getElementById('error');
             errorEl.style.display = 'none';
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (password !== confirmPassword) {
+                errorEl.textContent = 'Passwords do not match.';
+                errorEl.style.display = 'block';
+                return;
+            }
 
             const res = await fetch('/api/profiles', {
                 method: 'POST',
@@ -57,7 +100,8 @@
                 body: JSON.stringify({
                     username: document.getElementById('username').value,
                     displayName: document.getElementById('displayName').value,
-                    role: 0
+                    role: 0,
+                    password
                 })
             });
 
