@@ -9,4 +9,5 @@ public record CreateProfileCommand(
     string Username,
     string DisplayName,
     UserRole Role,
-    string? AvatarUrl) : IRequest<Result<ProfileDto>>;
+    string? AvatarUrl,
+    string Password) : IRequest<Result<ProfileDto>>;

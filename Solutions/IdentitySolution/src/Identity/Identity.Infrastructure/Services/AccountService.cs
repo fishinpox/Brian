@@ -38,4 +38,24 @@ public class AccountService(UserManager<ApplicationUser> userManager) : IAccount
         var user = await userManager.FindByEmailAsync(email);
         return user is not null;
     }
+
+    public async Task<(bool Success, string[] Errors)> SetPasswordAsync(Guid accountId, string newPassword, CancellationToken ct)
+    {
+        var user = await userManager.FindByIdAsync(accountId.ToString());
+        if (user is null)
+            return (false, ["Account not found."]);
+
+        if (await userManager.HasPasswordAsync(user))
+        {
+            var removeResult = await userManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+                return (false, removeResult.Errors.Select(e => e.Description).ToArray());
+        }
+
+        var addResult = await userManager.AddPasswordAsync(user, newPassword);
+        if (!addResult.Succeeded)
+            return (false, addResult.Errors.Select(e => e.Description).ToArray());
+
+        return (true, []);
+    }
 }

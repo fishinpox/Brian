@@ -12,6 +12,7 @@ namespace Identity.Application.Features.Profiles.Commands.CreateProfile;
 public class CreateProfileCommandHandler(
     IIdentityDbContext db,
     ICurrentUserService currentUserService,
+    IAccountService accountService,
     IPublishEndpoint publishEndpoint)
     : IRequestHandler<CreateProfileCommand, Result<ProfileDto>>
 {
@@ -25,6 +26,16 @@ public class CreateProfileCommandHandler(
             .AnyAsync(p => p.Username == request.Username, cancellationToken);
         if (usernameExists)
             return Result<ProfileDto>.Failure("Username is already taken.");
+
+        // Set this before creating the profile so a password failure doesn't
+        // leave a profile persisted without one -- Google sign-ups reach here
+        // with an account whose current password is an unknown random value
+        // (see GoogleLoginCommandHandler.HandleNewUserAsync), so this is their
+        // only chance to set one they'll actually know.
+        var (passwordSet, passwordErrors) = await accountService.SetPasswordAsync(
+            accountId.Value, request.Password, cancellationToken);
+        if (!passwordSet)
+            return Result<ProfileDto>.Failure(passwordErrors);
 
         var profile = new Profile
         {
