@@ -21,6 +21,7 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<ICredentialEncryptionService, AesCredentialEncryptionService>();
 
         services.AddRefitClient<IHolodexApiClient>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(
