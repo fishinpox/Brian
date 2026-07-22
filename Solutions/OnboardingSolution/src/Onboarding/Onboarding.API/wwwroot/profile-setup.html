@@ -108,7 +108,7 @@
             if (res.ok) {
                 const data = await res.json();
                 localStorage.setItem('token', token);
-                window.location.href = '/holodex-setup.html?token=' + encodeURIComponent(token);
+                window.location.href = 'https://localhost:7002/calendar.html?token=' + encodeURIComponent(token);
             } else {
                 const err = await res.json();
                 errorEl.textContent = Array.isArray(err) ? err.join(', ') : (err.title || 'Failed to create profile.');
