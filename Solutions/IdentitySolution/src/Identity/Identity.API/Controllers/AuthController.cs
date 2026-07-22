@@ -73,7 +73,10 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
 
         var response = result.Value!;
         if (response.NeedsProfile)
-            return Redirect($"/profile-setup.html?token={Uri.EscapeDataString(response.Token)}");
+        {
+            var onboardingBaseUrl = config["Onboarding:BaseUrl"];
+            return Redirect($"{onboardingBaseUrl}/profile-setup.html?token={Uri.EscapeDataString(response.Token)}");
+        }
 
         return Redirect($"https://localhost:7002/calendar.html?token={Uri.EscapeDataString(response.Token)}");
     }
