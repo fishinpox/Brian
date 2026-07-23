@@ -28,7 +28,7 @@ public interface IHolodexApiClient
     [Get("/channels")]
     Task<List<HolodexChannelDto>> SearchChannelsAsync(
         [Header("X-APIKEY")] string apiKey,
-        [Query] string search,
+        [Query] string? search = null,
         [Query] string type = "vtuber",
         [Query] int limit = 20);
 }

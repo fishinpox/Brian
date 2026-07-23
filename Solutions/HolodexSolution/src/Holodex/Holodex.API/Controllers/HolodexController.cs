@@ -23,7 +23,7 @@ public class HolodexController(ISender sender) : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchChannels([FromQuery] string q, CancellationToken ct)
+    public async Task<IActionResult> SearchChannels([FromQuery] string? q, CancellationToken ct)
     {
         var result = await sender.Send(new SearchHolodexChannelsQuery(q), ct);
         return result.Succeeded ? Ok(result.Value) : BadRequest(result.Errors);
