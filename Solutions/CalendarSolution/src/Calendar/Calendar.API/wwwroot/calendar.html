@@ -24,7 +24,8 @@
         .badge-live { background: #fce8e6; color: #d93025; }
         .badge-upcoming { background: #fef7e0; color: #b06000; }
         .loading, .empty { text-align: center; padding: 30px; color: #999; font-size: 14px; }
-        .connections-card { margin-top: 16px; }
+        .groupbox { margin-top: 16px; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: #fff; }
+        .groupbox legend { font-size: 14px; font-weight: 600; color: #333; padding: 0 8px; }
         .connection-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
         .connection-name { font-size: 14px; color: #333; font-weight: 500; }
         .btn-connect { padding: 8px 16px; background: #4285f4; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
@@ -36,22 +37,12 @@
         .connect-save { background: #4285f4; color: #fff; }
         .connect-cancel { background: none; border: 1px solid #ddd; color: #666; }
         .connect-error { color: #d93025; font-size: 12px; margin-top: 6px; display: none; }
-        .connection-status { font-size: 12px; color: #666; margin-top: 2px; }
-        .manage-link { font-size: 12px; color: #4285f4; cursor: pointer; text-decoration: underline; margin-left: 8px; }
-        .picklist { display: none; margin-top: 12px; }
-        .select-all-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .select-all-row button { background: none; border: none; color: #4285f4; font-size: 13px; cursor: pointer; padding: 0; }
-        .channel-list { max-height: 240px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; margin-bottom: 12px; }
-        .channel-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; cursor: pointer; }
-        .channel-row:last-child { border-bottom: none; }
-        .channel-photo { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
-        .picklist-actions { display: flex; gap: 8px; }
-        .picklist-save { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
-        .picklist-skip { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: none; color: #666; }
-        .picklist-note { font-size: 12px; color: #999; margin-top: 8px; }
-        .picklist-search { display: flex; gap: 8px; margin-bottom: 12px; }
-        .picklist-search input[type="text"] { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-        .picklist-search button { padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
+        .manage-link { font-size: 12px; color: #4285f4; cursor: pointer; text-decoration: none; }
+        .followed-list { margin-top: 12px; }
+        .followed-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; }
+        .followed-row:last-child { border-bottom: none; }
+        .followed-photo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+        .followed-empty { font-size: 13px; color: #999; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -71,17 +62,14 @@
             </div>
         </div>
 
-        <div class="card connections-card">
-            <h2>Connect More Accounts</h2>
+        <fieldset class="groupbox">
+            <legend>Holodex</legend>
 
             <div class="connection-row">
                 <span class="connection-name">Holodex</span>
                 <span class="badge-connected" id="holodexConnected" style="display:none;">Connected</span>
                 <button class="btn-connect" id="holodexConnectBtn">Connect Holodex</button>
             </div>
-            <p class="connection-status" id="holodexStatusText" style="display:none;">
-                <span id="holodexStatusLabel"></span><span class="manage-link" id="holodexManageLink">Manage</span>
-            </p>
             <div class="connect-form" id="holodexForm">
                 <input type="text" id="holodexApiKey" placeholder="Holodex API key">
                 <button class="connect-save" id="holodexSaveBtn">Save</button>
@@ -89,26 +77,14 @@
             </div>
             <p class="connect-error" id="holodexError"></p>
 
-            <div class="picklist" id="holodexPicklist">
-                <div class="picklist-search">
-                    <input type="text" id="holodexSearchInput" placeholder="Search Holodex for a VTuber...">
-                    <button type="button" id="holodexSearchBtn">Search</button>
+            <div id="holodexFollowedSection" style="display:none;">
+                <div class="connection-row">
+                    <span class="connection-name" id="holodexFollowedSummary"></span>
+                    <a class="manage-link" href="/holodex-follow.html">Manage VTubers</a>
                 </div>
-                <div class="select-all-row">
-                    <span class="connection-status" style="margin:0;">Select the VTubers to follow</span>
-                    <button type="button" id="holodexSelectAllBtn">Select all / none</button>
-                </div>
-                <div class="channel-list" id="holodexChannelList">
-                    <p class="loading">Loading your followed VTubers...</p>
-                </div>
-                <div class="picklist-actions">
-                    <button class="picklist-save" id="holodexPicklistSaveBtn">Save</button>
-                    <button class="picklist-skip" id="holodexPicklistSkipBtn">Skip for now</button>
-                </div>
-                <p class="picklist-note">Your VTuber events will appear on your calendar shortly after saving.</p>
-                <p class="connect-error" id="holodexPicklistError"></p>
+                <div class="followed-list" id="holodexFollowedList"></div>
             </div>
-        </div>
+        </fieldset>
     </div>
 
     <script>
@@ -209,14 +185,25 @@
         loadCalendar();
 
         const HOLODEX_API = 'https://localhost:7009';
-        let holodexChannels = [];
 
-        function showConnectedStatus(followedCount) {
-            document.getElementById('holodexConnected').style.display = 'inline-block';
-            document.getElementById('holodexConnectBtn').style.display = 'none';
-            const label = followedCount === 1 ? 'VTuber' : 'VTubers';
-            document.getElementById('holodexStatusLabel').textContent = `Following ${followedCount} ${label}. `;
-            document.getElementById('holodexStatusText').style.display = 'block';
+        function renderFollowedList(channels) {
+            const summary = document.getElementById('holodexFollowedSummary');
+            const list = document.getElementById('holodexFollowedList');
+
+            const label = channels.length === 1 ? 'VTuber' : 'VTubers';
+            summary.textContent = `Following ${channels.length} ${label}`;
+
+            if (channels.length === 0) {
+                list.innerHTML = '<p class="followed-empty">You\'re not following any VTubers yet.</p>';
+                return;
+            }
+
+            list.innerHTML = channels.map(c => `
+                <div class="followed-row">
+                    ${c.photoUrl ? `<img src="${c.photoUrl}" class="followed-photo">` : ''}
+                    <span>${c.englishName || c.name}</span>
+                </div>
+            `).join('');
         }
 
         async function loadHolodexConnectionState() {
@@ -231,12 +218,12 @@
 
                 document.getElementById('holodexConnected').style.display = 'inline-block';
                 document.getElementById('holodexConnectBtn').style.display = 'none';
+                document.getElementById('holodexFollowedSection').style.display = 'block';
 
-                if (status.followedCount === 0) {
-                    await openHolodexPicklist();
-                } else {
-                    showConnectedStatus(status.followedCount);
-                }
+                const followedRes = await fetch(HOLODEX_API + '/api/holodex/followed', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                renderFollowedList(followedRes.ok ? await followedRes.json() : []);
             } catch (e) {
                 // Holodex service unreachable - leave the connect button as-is
             }
@@ -261,11 +248,19 @@
             const apiKey = document.getElementById('holodexApiKey').value.trim();
             if (!apiKey) return;
 
-            const res = await fetch(HOLODEX_API + '/api/holodex/credential', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ apiKey })
-            });
+            let res;
+            try {
+                res = await fetch(HOLODEX_API + '/api/holodex/credential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ apiKey })
+                });
+            } catch (e) {
+                console.error('Failed to reach Holodex service:', e);
+                errorEl.textContent = 'Holodex is currently unavailable.';
+                errorEl.style.display = 'block';
+                return;
+            }
 
             if (!res.ok) {
                 errorEl.textContent = 'Could not save your Holodex API key. Please check it and try again.';
@@ -273,124 +268,7 @@
                 return;
             }
 
-            document.getElementById('holodexForm').style.display = 'none';
-            document.getElementById('holodexConnected').style.display = 'inline-block';
-            await openHolodexPicklist();
-        });
-
-        function renderHolodexChannelList(emptyMessage) {
-            const list = document.getElementById('holodexChannelList');
-
-            if (holodexChannels.length === 0) {
-                list.innerHTML = `<p class="loading">${emptyMessage}</p>`;
-                return;
-            }
-
-            list.innerHTML = holodexChannels.map(c => `
-                <label class="channel-row">
-                    <input type="checkbox" class="holodex-channel-check" value="${c.channelId}" ${c.isFollowed ? 'checked' : ''}>
-                    ${c.photoUrl ? `<img src="${c.photoUrl}" class="channel-photo">` : ''}
-                    <span>${c.englishName || c.name}</span>
-                </label>
-            `).join('');
-        }
-
-        async function openHolodexPicklist() {
-            const errorEl = document.getElementById('holodexPicklistError');
-            errorEl.style.display = 'none';
-            document.getElementById('holodexPicklist').style.display = 'block';
-            document.getElementById('holodexChannelList').innerHTML = '<p class="loading">Loading your followed VTubers...</p>';
-
-            const res = await fetch(HOLODEX_API + '/api/holodex/followed', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-
-            if (!res.ok) {
-                document.getElementById('holodexChannelList').innerHTML = '';
-                errorEl.textContent = 'Could not load your followed VTubers.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            holodexChannels = await res.json();
-            renderHolodexChannelList("You're not following any VTubers yet — search above to add some.");
-        }
-
-        document.getElementById('holodexManageLink').addEventListener('click', () => {
-            openHolodexPicklist();
-        });
-
-        async function searchHolodexChannels() {
-            const errorEl = document.getElementById('holodexPicklistError');
-            errorEl.style.display = 'none';
-
-            const term = document.getElementById('holodexSearchInput').value.trim();
-            if (term.length < 2) return;
-
-            const res = await fetch(HOLODEX_API + '/api/holodex/search?q=' + encodeURIComponent(term), {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-
-            if (!res.ok) {
-                errorEl.textContent = 'Could not search Holodex. Please try again.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const results = await res.json();
-            const existingIds = new Set(holodexChannels.map(c => c.channelId));
-            const newOnes = results.filter(c => !existingIds.has(c.channelId));
-            holodexChannels = holodexChannels.concat(newOnes);
-
-            if (holodexChannels.length === 0) {
-                errorEl.textContent = 'No VTubers found for that search.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            renderHolodexChannelList('No VTubers found for that search.');
-        }
-
-        document.getElementById('holodexSearchBtn').addEventListener('click', searchHolodexChannels);
-        document.getElementById('holodexSearchInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                searchHolodexChannels();
-            }
-        });
-
-        document.getElementById('holodexSelectAllBtn').addEventListener('click', () => {
-            const boxes = document.querySelectorAll('.holodex-channel-check');
-            const allChecked = Array.from(boxes).every(cb => cb.checked);
-            boxes.forEach(cb => cb.checked = !allChecked);
-        });
-
-        document.getElementById('holodexPicklistSkipBtn').addEventListener('click', () => {
-            document.getElementById('holodexPicklist').style.display = 'none';
-        });
-
-        document.getElementById('holodexPicklistSaveBtn').addEventListener('click', async () => {
-            const errorEl = document.getElementById('holodexPicklistError');
-            errorEl.style.display = 'none';
-
-            const selectedIds = Array.from(document.querySelectorAll('.holodex-channel-check:checked')).map(cb => cb.value);
-            const selected = holodexChannels.filter(c => selectedIds.includes(c.channelId));
-
-            const res = await fetch(HOLODEX_API + '/api/holodex/followed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ channels: selected })
-            });
-
-            if (!res.ok) {
-                errorEl.textContent = 'Failed to save your selected VTubers. Please try again.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const saved = await res.json();
-            document.getElementById('holodexPicklist').style.display = 'none';
-            showConnectedStatus(saved.count);
+            window.location.href = '/holodex-follow.html';
         });
 
         loadHolodexConnectionState();

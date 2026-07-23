@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brian - Follow VTubers</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
+        .header { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 16px 24px; }
+        .header h1 { font-size: 20px; color: #333; }
+        .header .subtitle { font-size: 13px; color: #666; margin-top: 2px; }
+        .content { max-width: 640px; margin: 40px auto; padding: 0 24px; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 24px; }
+        .back-link { display: inline-block; font-size: 13px; color: #4285f4; text-decoration: none; margin-bottom: 16px; }
+        .search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .search-row input[type="text"] { flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .search-row button { padding: 10px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
+        .select-all-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .select-all-row span { font-size: 13px; color: #666; }
+        .select-all-row button { background: none; border: none; color: #4285f4; font-size: 13px; cursor: pointer; padding: 0; }
+        .channel-list { max-height: 360px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; margin-bottom: 16px; }
+        .channel-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; cursor: pointer; }
+        .channel-row:last-child { border-bottom: none; }
+        .channel-photo { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .loading, .empty { text-align: center; padding: 20px; color: #999; font-size: 14px; }
+        .actions { display: flex; justify-content: space-between; align-items: center; }
+        .selected-count { font-size: 13px; color: #666; }
+        .btn-finish { padding: 10px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; border: none; background: #4285f4; color: #fff; }
+        .btn-finish:hover { background: #3367d6; }
+        .error { color: #d93025; font-size: 13px; margin-bottom: 12px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Brian</h1>
+        <p class="subtitle">Choose the VTubers you want to follow</p>
+    </div>
+
+    <div class="content">
+        <div class="card">
+            <a class="back-link" href="/calendar.html">&larr; Back to Calendar</a>
+
+            <div class="search-row">
+                <input type="text" id="searchInput" placeholder="Search Holodex for a VTuber...">
+                <button type="button" id="searchBtn">Search</button>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="select-all-row">
+                <span>Select the VTubers to follow</span>
+                <button type="button" id="selectAllBtn">Select all / none</button>
+            </div>
+
+            <div class="channel-list" id="channelList">
+                <p class="loading">Loading VTubers from Holodex...</p>
+            </div>
+
+            <div class="actions">
+                <span class="selected-count" id="selectedCount"></span>
+                <button class="btn-finish" id="finishBtn">Finished</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token') || localStorage.getItem('token');
+        const IDENTITY_LOGIN_URL = 'https://localhost:7001/login.html';
+
+        if (!token) {
+            window.location.href = IDENTITY_LOGIN_URL;
+        } else {
+            localStorage.setItem('token', token);
+        }
+
+        const HOLODEX_API = 'https://localhost:7009';
+
+        // Map keyed by channelId so selections survive across multiple searches.
+        const channelsById = new Map();
+
+        function upsertChannels(channels, markSelected) {
+            for (const c of channels) {
+                const existing = channelsById.get(c.channelId);
+                channelsById.set(c.channelId, {
+                    channelId: c.channelId,
+                    name: c.name,
+                    englishName: c.englishName,
+                    photoUrl: c.photoUrl,
+                    selected: existing ? existing.selected : (markSelected || !!c.isFollowed)
+                });
+            }
+        }
+
+        function renderChannelList(emptyMessage) {
+            const list = document.getElementById('channelList');
+            const channels = Array.from(channelsById.values());
+
+            if (channels.length === 0) {
+                list.innerHTML = `<p class="empty">${emptyMessage}</p>`;
+            } else {
+                list.innerHTML = channels.map(c => `
+                    <label class="channel-row">
+                        <input type="checkbox" class="channel-check" value="${c.channelId}" ${c.selected ? 'checked' : ''}>
+                        ${c.photoUrl ? `<img src="${c.photoUrl}" class="channel-photo">` : ''}
+                        <span>${c.englishName || c.name}</span>
+                    </label>
+                `).join('');
+            }
+
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = Array.from(document.querySelectorAll('.channel-check:checked')).length;
+            document.getElementById('selectedCount').textContent =
+                count === 0 ? 'No VTubers selected' : `${count} VTuber${count === 1 ? '' : 's'} selected`;
+        }
+
+        document.getElementById('channelList').addEventListener('change', (e) => {
+            if (e.target.classList.contains('channel-check')) {
+                const entry = channelsById.get(e.target.value);
+                if (entry) entry.selected = e.target.checked;
+                updateSelectedCount();
+            }
+        });
+
+        document.getElementById('selectAllBtn').addEventListener('click', () => {
+            const boxes = document.querySelectorAll('.channel-check');
+            const allChecked = Array.from(boxes).every(cb => cb.checked);
+            boxes.forEach(cb => {
+                cb.checked = !allChecked;
+                const entry = channelsById.get(cb.value);
+                if (entry) entry.selected = cb.checked;
+            });
+            updateSelectedCount();
+        });
+
+        async function loadInitialChannels() {
+            const errorEl = document.getElementById('error');
+            errorEl.style.display = 'none';
+
+            try {
+                const [followedRes, browseRes] = await Promise.all([
+                    fetch(HOLODEX_API + '/api/holodex/followed', { headers: { 'Authorization': 'Bearer ' + token } }),
+                    fetch(HOLODEX_API + '/api/holodex/search', { headers: { 'Authorization': 'Bearer ' + token } })
+                ]);
+
+                if (followedRes.ok) upsertChannels(await followedRes.json(), true);
+                if (browseRes.ok) upsertChannels(await browseRes.json(), false);
+
+                renderChannelList('No VTubers found. Try searching by name above.');
+            } catch (e) {
+                errorEl.textContent = 'Could not load VTubers from Holodex.';
+                errorEl.style.display = 'block';
+                document.getElementById('channelList').innerHTML = '';
+            }
+        }
+
+        async function searchChannels() {
+            const errorEl = document.getElementById('error');
+            errorEl.style.display = 'none';
+
+            const term = document.getElementById('searchInput').value.trim();
+            if (term.length < 2) return;
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/search?q=' + encodeURIComponent(term), {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (!res.ok) {
+                errorEl.textContent = 'Could not search Holodex. Please try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            upsertChannels(await res.json(), false);
+            renderChannelList('No VTubers found for that search.');
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', searchChannels);
+        document.getElementById('searchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchChannels();
+            }
+        });
+
+        document.getElementById('finishBtn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('error');
+            errorEl.style.display = 'none';
+
+            const selected = Array.from(channelsById.values()).filter(c => c.selected);
+
+            const res = await fetch(HOLODEX_API + '/api/holodex/followed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ channels: selected })
+            });
+
+            if (!res.ok) {
+                errorEl.textContent = 'Failed to save your selected VTubers. Please try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            window.location.href = '/calendar.html';
+        });
+
+        loadInitialChannels();
+    </script>
+</body>
+</html>

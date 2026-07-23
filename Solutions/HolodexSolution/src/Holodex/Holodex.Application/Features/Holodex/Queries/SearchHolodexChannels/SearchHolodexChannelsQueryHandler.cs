@@ -9,7 +9,8 @@ namespace Holodex.Application.Features.Holodex.Queries.SearchHolodexChannels;
 public class SearchHolodexChannelsQueryHandler(
     IHolodexDbContext db,
     ICurrentUserService currentUser,
-    IHolodexApiClient holodexClient)
+    IHolodexApiClient holodexClient,
+    ICredentialEncryptionService encryption)
     : IRequestHandler<SearchHolodexChannelsQuery, Result<List<HolodexFavoriteDto>>>
 {
     public async Task<Result<List<HolodexFavoriteDto>>> Handle(SearchHolodexChannelsQuery request, CancellationToken cancellationToken)
@@ -25,7 +26,7 @@ public class SearchHolodexChannelsQueryHandler(
         if (credential is null)
             return Result<List<HolodexFavoriteDto>>.Failure("No Holodex account linked");
 
-        var apiKey = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(credential.EncryptedValue));
+        var apiKey = encryption.Decrypt(credential.EncryptedValue);
 
         var channels = await holodexClient.SearchChannelsAsync(apiKey, request.SearchTerm);
 

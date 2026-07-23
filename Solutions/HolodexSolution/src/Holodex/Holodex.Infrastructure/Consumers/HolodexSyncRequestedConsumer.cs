@@ -11,6 +11,7 @@ public class HolodexSyncRequestedConsumer(
     IHolodexDbContext db,
     IHolodexApiClient holodexClient,
     IPublishEndpoint publishEndpoint,
+    ICredentialEncryptionService encryption,
     ILogger<HolodexSyncRequestedConsumer> logger)
     : IConsumer<HolodexSyncRequestedEvent>
 {
@@ -40,7 +41,7 @@ public class HolodexSyncRequestedConsumer(
 
         try
         {
-            var apiKey = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(credential.EncryptedValue));
+            var apiKey = encryption.Decrypt(credential.EncryptedValue);
 
             var videos = await holodexClient.GetLiveAndUpcomingForChannelsAsync(apiKey, string.Join(",", channelIds));
 

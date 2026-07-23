@@ -9,7 +9,8 @@ namespace Holodex.Application.Features.Holodex.Commands.StoreHolodexCredential;
 
 public class StoreHolodexCredentialCommandHandler(
     IHolodexDbContext db,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ICredentialEncryptionService encryption)
     : IRequestHandler<StoreHolodexCredentialCommand, Result>
 {
     public async Task<Result> Handle(StoreHolodexCredentialCommand request, CancellationToken cancellationToken)
@@ -18,7 +19,7 @@ public class StoreHolodexCredentialCommandHandler(
             throw new ForbiddenAccessException();
 
         var profileId = currentUser.ProfileId.Value;
-        var encryptedValue = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.ApiKey));
+        var encryptedValue = encryption.Encrypt(request.ApiKey);
 
         var existing = await db.ExternalCredentials
             .FirstOrDefaultAsync(c => c.ProfileId == profileId, cancellationToken);
