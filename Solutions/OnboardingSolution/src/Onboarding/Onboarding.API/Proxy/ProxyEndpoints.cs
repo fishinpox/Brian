@@ -25,6 +25,7 @@ public static class ProxyEndpoints
         var response = await client.SendAsync(request, ctx.RequestAborted);
         ctx.Response.StatusCode = (int)response.StatusCode;
         if (response.Content.Headers.ContentType is not null)
+
             ctx.Response.ContentType = response.Content.Headers.ContentType.ToString();
         await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
     }
