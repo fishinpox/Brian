@@ -248,11 +248,19 @@
             const apiKey = document.getElementById('holodexApiKey').value.trim();
             if (!apiKey) return;
 
-            const res = await fetch(HOLODEX_API + '/api/holodex/credential', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ apiKey })
-            });
+            let res;
+            try {
+                res = await fetch(HOLODEX_API + '/api/holodex/credential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ apiKey })
+                });
+            } catch (e) {
+                console.error('Failed to reach Holodex service:', e);
+                errorEl.textContent = 'Holodex is currently unavailable.';
+                errorEl.style.display = 'block';
+                return;
+            }
 
             if (!res.ok) {
                 errorEl.textContent = 'Could not save your Holodex API key. Please check it and try again.';
