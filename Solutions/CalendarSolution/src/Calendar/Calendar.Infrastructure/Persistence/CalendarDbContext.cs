@@ -11,6 +11,7 @@ public class CalendarDbContext(DbContextOptions<CalendarDbContext> options)
     public DbSet<PersonalEvent> PersonalEvents => Set<PersonalEvent>();
     public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<StreamEvent> StreamEvents => Set<StreamEvent>();
+    public DbSet<CalendarBackground> CalendarBackgrounds => Set<CalendarBackground>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
