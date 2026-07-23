@@ -166,9 +166,17 @@ Shared.Contracts has zero dependencies (pure records). Shared.Infrastructure pro
 - **EF Core**: Application layer interfaces use `DbSet<T>` (EF Core ref in Application .csproj is intentional for the interface types + LINQ extensions).
 - **MassTransit**: Integration events defined in `Shared.Contracts`. Consumers that need `IHubContext<NotificationHub>` live in `Notifications.API` (not Infrastructure) because the web SDK is required for SignalR types. A service that only consumes/publishes events with no HTTP API of its own (e.g. `Moderation.API`) can still be a minimal ASP.NET Core host — just for the MassTransit host lifetime and a `/health` endpoint.
 - **SignalR**: Hub at `/hubs/notifications` on Notifications service. Clients join group named by `profile_id`. JWT via query string `?access_token=` for SignalR connections.
-- **Hangfire**: Calendar service runs `reminder-dispatch` job (Cron.Minutely). Dashboard at `/hangfire`.
-- **Refit**: `IHolodexApiClient` interface (with Refit attributes) lives in Calendar.Application — registered in Calendar.Infrastructure DI.
+- **Hangfire**: Calendar service runs `reminder-dispatch` job (Cron.Minutely). Dashboard at `/hangfire`. Note: Calendar.API currently crashes at startup (unhandled exception) if SQL Server isn't reachable when this job registers — start `docker compose up -d` before Calendar.API.
+- **Refit**: `IHolodexApiClient` interface (with Refit attributes) lives in Holodex.Application — registered in Holodex.Infrastructure DI. `SearchChannelsAsync`'s `search` parameter is optional; omitting it returns Holodex's default browse list instead of requiring a name.
+- **Credential encryption**: External credentials (e.g. Holodex API keys) are encrypted at rest with AES-256-GCM via `ICredentialEncryptionService` (`Holodex.Infrastructure/Services/AesCredentialEncryptionService.cs`), keyed by `Credentials:EncryptionKey` config/user-secrets — not Base64.
+- **Static files**: services that serve static HTML/JS (Identity, Calendar, Onboarding) set `Cache-Control: no-cache, no-store, must-revalidate` on `UseStaticFiles()` so browsers don't serve a stale page after a file changes on disk.
 - **File-scoped namespaces**, primary constructors, collection expressions (`[]`) — C# 13 style throughout.
+
+## Recent Changes
+
+- **Onboarding service extracted**: `Solutions/OnboardingSolution/` (Onboarding.API, port 7012) is a thin BFF that hosts `login.html`/`profile-setup.html`, moved out of `Identity.API/wwwroot`. It proxies `POST /api/auth/login` and `POST /api/profiles` server-to-server to Identity.API via `IHttpClientFactory` (no CORS needed — the browser only ever talks to Onboarding's own origin). Identity's Google OAuth callback redirects to `Onboarding:BaseUrl` for profile setup instead of a same-origin relative path. `holodex-setup.html` was intentionally left behind, unlinked, in `Identity.API/wwwroot` for later reintroduction.
+- **VTuber follow flow moved to its own page**: `Solutions/CalendarSolution/.../wwwroot/holodex-follow.html` replaces the old inline picklist in `calendar.html`. It auto-loads a browse list from Holodex on load, supports searching by name (selections persist across searches, keyed by `channelId`), and a "Finished" button saves the selection and returns to `calendar.html`. The Holodex section on `calendar.html` is now a `<fieldset>` groupbox that displays the actual list of followed VTubers, not just a count.
+- **Static file caching fixed**: `Calendar.API`, `Identity.API`, and `Onboarding.API` now set `Cache-Control: no-cache, no-store, must-revalidate` on static files — previously a browser could keep serving a stale cached HTML/JS page after the file changed on disk.
 
 ## Phase Status
 
