@@ -44,6 +44,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<StreamGoLiveConsumer>();
+    x.AddConsumer<CalendarBackgroundApprovedConsumer>();
     x.UsingRabbitMq((ctx, cfg) =>
     {
         cfg.Host(builder.Configuration["MessageBus:Host"]);

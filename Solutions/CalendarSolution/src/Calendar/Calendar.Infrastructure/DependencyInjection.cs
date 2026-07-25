@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddMassTransit(x =>
         {
             x.AddConsumer<IntegrationVideosSyncedConsumer>();
+            x.AddConsumer<CalendarBackgroundApprovedConsumer>();
+            x.AddConsumer<CalendarBackgroundRejectedConsumer>();
             x.UsingRabbitMq((ctx, cfg) =>
             {
                 cfg.Host(config["MessageBus:Host"]);

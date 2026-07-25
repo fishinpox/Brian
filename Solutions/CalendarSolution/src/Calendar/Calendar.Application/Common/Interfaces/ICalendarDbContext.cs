@@ -8,5 +8,6 @@ public interface ICalendarDbContext
     DbSet<PersonalEvent> PersonalEvents { get; }
     DbSet<Reminder> Reminders { get; }
     DbSet<StreamEvent> StreamEvents { get; }
+    DbSet<CalendarBackground> CalendarBackgrounds { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

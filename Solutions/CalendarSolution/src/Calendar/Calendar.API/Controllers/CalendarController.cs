@@ -1,3 +1,5 @@
+using Calendar.Application.Features.Backgrounds.Commands.SubmitCalendarBackground;
+using Calendar.Application.Features.Backgrounds.Queries.GetCalendarBackground;
 using Calendar.Application.Features.Calendar.Queries.GetCalendarView;
 using Calendar.Application.Features.Events.Commands.CreatePersonalEvent;
 using Calendar.Application.Features.Events.Commands.DeletePersonalEvent;
@@ -58,5 +60,27 @@ public class CalendarController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new DismissReminderCommand(reminderId), ct);
         return result.Succeeded ? NoContent() : BadRequest(result.Errors);
+    }
+
+    [HttpPut("background")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> SubmitBackground([FromForm] IFormFile file, CancellationToken ct)
+    {
+        if (file.Length == 0)
+            return BadRequest(new[] { "File is required." });
+
+        await using var stream = new MemoryStream();
+        await file.CopyToAsync(stream, ct);
+
+        var command = new SubmitCalendarBackgroundCommand(stream.ToArray(), file.ContentType, file.FileName);
+        var result = await sender.Send(command, ct);
+        return result.Succeeded ? Accepted() : BadRequest(result.Errors);
+    }
+
+    [HttpGet("background")]
+    public async Task<IActionResult> GetBackground(CancellationToken ct)
+    {
+        var result = await sender.Send(new GetCalendarBackgroundQuery(), ct);
+        return result.Succeeded ? File(result.Value!.ImageData, result.Value.ContentType) : NotFound();
     }
 }
