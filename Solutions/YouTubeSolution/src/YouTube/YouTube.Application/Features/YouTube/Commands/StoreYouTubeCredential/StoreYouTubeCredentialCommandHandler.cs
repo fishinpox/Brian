@@ -9,7 +9,8 @@ namespace YouTube.Application.Features.YouTube.Commands.StoreYouTubeCredential;
 
 public class StoreYouTubeCredentialCommandHandler(
     IYouTubeDbContext db,
-    ICurrentUserService currentUser)
+    ICurrentUserService currentUser,
+    ICredentialEncryptionService encryption)
     : IRequestHandler<StoreYouTubeCredentialCommand, Result>
 {
     public async Task<Result> Handle(StoreYouTubeCredentialCommand request, CancellationToken cancellationToken)
@@ -18,7 +19,7 @@ public class StoreYouTubeCredentialCommandHandler(
             throw new ForbiddenAccessException();
 
         var profileId = currentUser.ProfileId.Value;
-        var encryptedValue = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(request.ApiKey));
+        var encryptedValue = encryption.Encrypt(request.ApiKey);
 
         var existing = await db.ExternalCredentials
             .FirstOrDefaultAsync(c => c.ProfileId == profileId, cancellationToken);

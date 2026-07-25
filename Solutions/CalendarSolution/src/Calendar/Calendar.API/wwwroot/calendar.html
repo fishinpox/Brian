@@ -43,6 +43,7 @@
         .followed-row:last-child { border-bottom: none; }
         .followed-photo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
         .followed-empty { font-size: 13px; color: #999; margin-top: 8px; }
+        .groupbox-hint { font-size: 12px; color: #999; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -83,6 +84,31 @@
                     <a class="manage-link" href="/holodex-follow.html">Manage VTubers</a>
                 </div>
                 <div class="followed-list" id="holodexFollowedList"></div>
+            </div>
+        </fieldset>
+
+        <fieldset class="groupbox">
+            <legend>YouTube</legend>
+            <p class="groupbox-hint">Finding and following VTubers uses Holodex's directory and doesn't need this. Connecting a YouTube Data API key now gets it ready for tracking subscriber growth and who's live, so we can help surface collaborations across the VTubers you follow.</p>
+
+            <div class="connection-row">
+                <span class="connection-name">YouTube</span>
+                <span class="badge-connected" id="youtubeConnected" style="display:none;">Connected</span>
+                <button class="btn-connect" id="youtubeConnectBtn">Connect YouTube</button>
+            </div>
+            <div class="connect-form" id="youtubeForm">
+                <input type="text" id="youtubeApiKey" placeholder="YouTube Data API key">
+                <button class="connect-save" id="youtubeSaveBtn">Save</button>
+                <button class="connect-cancel" id="youtubeCancelBtn">Cancel</button>
+            </div>
+            <p class="connect-error" id="youtubeError"></p>
+
+            <div id="youtubeFollowedSection" style="display:none;">
+                <div class="connection-row">
+                    <span class="connection-name" id="youtubeFollowedSummary"></span>
+                    <a class="manage-link" href="/youtube-follow.html">Manage VTubers</a>
+                </div>
+                <div class="followed-list" id="youtubeFollowedList"></div>
             </div>
         </fieldset>
     </div>
@@ -272,6 +298,95 @@
         });
 
         loadHolodexConnectionState();
+
+        const YOUTUBE_API = 'https://localhost:7011';
+
+        function renderYouTubeFollowedList(channels) {
+            const summary = document.getElementById('youtubeFollowedSummary');
+            const list = document.getElementById('youtubeFollowedList');
+
+            const label = channels.length === 1 ? 'VTuber' : 'VTubers';
+            summary.textContent = `Following ${channels.length} ${label}`;
+
+            if (channels.length === 0) {
+                list.innerHTML = '<p class="followed-empty">You\'re not following any VTubers yet.</p>';
+                return;
+            }
+
+            list.innerHTML = channels.map(c => `
+                <div class="followed-row">
+                    ${c.photoUrl ? `<img src="${c.photoUrl}" class="followed-photo">` : ''}
+                    <span>${c.englishName || c.name}</span>
+                </div>
+            `).join('');
+        }
+
+        async function loadYouTubeConnectionState() {
+            try {
+                const res = await fetch(YOUTUBE_API + '/api/youtube/status', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+
+                const status = await res.json();
+                if (!status.hasCredential) return;
+
+                document.getElementById('youtubeConnected').style.display = 'inline-block';
+                document.getElementById('youtubeConnectBtn').style.display = 'none';
+                document.getElementById('youtubeFollowedSection').style.display = 'block';
+
+                const followedRes = await fetch(YOUTUBE_API + '/api/youtube/followed', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                renderYouTubeFollowedList(followedRes.ok ? await followedRes.json() : []);
+            } catch (e) {
+                // YouTube service unreachable - leave the connect button as-is
+            }
+        }
+
+        document.getElementById('youtubeConnectBtn').addEventListener('click', () => {
+            document.getElementById('youtubeForm').style.display = 'flex';
+            document.getElementById('youtubeConnectBtn').style.display = 'none';
+        });
+
+        document.getElementById('youtubeCancelBtn').addEventListener('click', () => {
+            document.getElementById('youtubeForm').style.display = 'none';
+            document.getElementById('youtubeConnectBtn').style.display = 'inline-block';
+            document.getElementById('youtubeError').style.display = 'none';
+            document.getElementById('youtubeApiKey').value = '';
+        });
+
+        document.getElementById('youtubeSaveBtn').addEventListener('click', async () => {
+            const errorEl = document.getElementById('youtubeError');
+            errorEl.style.display = 'none';
+
+            const apiKey = document.getElementById('youtubeApiKey').value.trim();
+            if (!apiKey) return;
+
+            let res;
+            try {
+                res = await fetch(YOUTUBE_API + '/api/youtube/credential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ apiKey })
+                });
+            } catch (e) {
+                console.error('Failed to reach YouTube service:', e);
+                errorEl.textContent = 'YouTube is currently unavailable.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            if (!res.ok) {
+                errorEl.textContent = 'Could not save your YouTube API key. Please check it and try again.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            window.location.href = '/youtube-follow.html';
+        });
+
+        loadYouTubeConnectionState();
     </script>
 </body>
 </html>
