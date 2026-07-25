@@ -9,6 +9,7 @@ public class YouTubeDbContext(DbContextOptions<YouTubeDbContext> options)
     : DbContext(options), IYouTubeDbContext
 {
     public DbSet<ExternalCredential> ExternalCredentials => Set<ExternalCredential>();
+    public DbSet<FollowedChannel> FollowedChannels => Set<FollowedChannel>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
