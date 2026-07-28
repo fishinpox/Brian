@@ -66,7 +66,7 @@
             if (res.ok) {
                 const data = await res.json();
                 localStorage.setItem('token', data.token);
-                window.location.href = 'https://localhost:7002/calendar.html?token=' + encodeURIComponent(data.token);
+                window.location.href = 'http://localhost:5173/?token=' + encodeURIComponent(data.token);
             } else {
                 const err = await res.json();
                 errorEl.textContent = Array.isArray(err) ? err.join(', ') : (err.title || 'Invalid credentials.');
