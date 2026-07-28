@@ -23,6 +23,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Node / Vite (Calendar.Web)
+node_modules/
+dist/
+.env.local
+
 # Contains real credentials pasted during setup - never track
 Documentation/HowTo/
 IdentitySetup/GoogleOAuthClientId.json

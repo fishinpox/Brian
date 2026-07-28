@@ -41,6 +41,15 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(opts =>
+{
+    opts.AddDefaultPolicy(policy => policy
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+});
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<StreamGoLiveConsumer>();
@@ -62,6 +71,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

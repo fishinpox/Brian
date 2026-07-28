@@ -78,6 +78,7 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
             return Redirect($"{onboardingBaseUrl}/profile-setup.html?token={Uri.EscapeDataString(response.Token)}");
         }
 
-        return Redirect($"https://localhost:7002/calendar.html?token={Uri.EscapeDataString(response.Token)}");
+        var calendarWebBaseUrl = config["Frontend:CalendarWebBaseUrl"];
+        return Redirect($"{calendarWebBaseUrl}/?token={Uri.EscapeDataString(response.Token)}");
     }
 }
