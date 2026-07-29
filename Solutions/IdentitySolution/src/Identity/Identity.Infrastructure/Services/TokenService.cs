@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Identity.Application.Common.Interfaces;
 using Identity.Domain.Entities;
@@ -61,5 +62,20 @@ public class TokenService(IConfiguration config) : ITokenService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    public string HashRefreshToken(string rawToken)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToHexString(hash);
     }
 }

@@ -23,5 +23,6 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
             .HasMaxLength(500);
 
         builder.HasIndex(s => new { s.AccountId, s.ExpiresAt });
+        builder.HasIndex(s => s.TokenHash).IsUnique();
     }
 }

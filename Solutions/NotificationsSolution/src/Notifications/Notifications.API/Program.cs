@@ -54,6 +54,7 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<StreamGoLiveConsumer>();
     x.AddConsumer<CalendarBackgroundApprovedConsumer>();
+    x.AddConsumer<WallpaperOwnershipGrantedConsumer>();
     x.UsingRabbitMq((ctx, cfg) =>
     {
         cfg.Host(builder.Configuration["MessageBus:Host"]);

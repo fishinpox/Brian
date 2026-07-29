@@ -6,4 +6,6 @@ namespace Identity.Application.Features.Auth.Commands.Login;
 public record LoginCommand(
     string Email,
     string Password,
-    Guid? PreferredProfileId) : IRequest<Result<LoginResponse>>;
+    Guid? PreferredProfileId,
+    string? IpAddress = null,
+    string? UserAgent = null) : IRequest<Result<LoginResponse>>;

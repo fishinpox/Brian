@@ -166,6 +166,9 @@ namespace Identity.Infrastructure.Migrations
                     b.Property<Guid>("ProfileId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ReplacedBySessionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -179,6 +182,9 @@ namespace Identity.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
 
                     b.HasIndex("AccountId", "ExpiresAt");
 

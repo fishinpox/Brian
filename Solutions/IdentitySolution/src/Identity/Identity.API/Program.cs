@@ -14,7 +14,14 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var signingKey = builder.Configuration["Jwt:SigningKey"]!;
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(opts =>
+    {
+        // AddIdentity() above registers its own cookie scheme and would otherwise silently
+        // become the default challenge scheme, turning [Authorize] failures on API endpoints
+        // into a 302 redirect to /Account/Login instead of a 401 - force JWT bearer explicitly.
+        opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(opts =>
     {
         opts.TokenValidationParameters = new TokenValidationParameters

@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using Identity.Application.Features.Auth.Commands.GoogleLogin;
 using Identity.Application.Features.Auth.Commands.Login;
+using Identity.Application.Features.Auth.Commands.Logout;
+using Identity.Application.Features.Auth.Commands.Refresh;
 using Identity.Application.Features.Auth.Commands.RegisterAccount;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +14,14 @@ namespace Identity.API.Controllers;
 [Route("api/auth")]
 public class AuthController(ISender sender, IConfiguration config) : ControllerBase
 {
+    private string? ClientIpAddress => HttpContext.Connection.RemoteIpAddress?.ToString();
+    private string? ClientUserAgent => Request.Headers.UserAgent.ToString() is { Length: > 0 } ua ? ua : null;
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterAccountCommand command, CancellationToken cancellationToken)
     {
-        var result = await sender.Send(command, cancellationToken);
+        var enriched = command with { IpAddress = ClientIpAddress, UserAgent = ClientUserAgent };
+        var result = await sender.Send(enriched, cancellationToken);
         if (result.Failed)
             return BadRequest(result.Errors);
 
@@ -25,7 +31,19 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command, CancellationToken cancellationToken)
     {
-        var result = await sender.Send(command, cancellationToken);
+        var enriched = command with { IpAddress = ClientIpAddress, UserAgent = ClientUserAgent };
+        var result = await sender.Send(enriched, cancellationToken);
+        if (result.Failed)
+            return Unauthorized(result.Errors);
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommand command, CancellationToken cancellationToken)
+    {
+        var enriched = command with { IpAddress = ClientIpAddress, UserAgent = ClientUserAgent };
+        var result = await sender.Send(enriched, cancellationToken);
         if (result.Failed)
             return Unauthorized(result.Errors);
 
@@ -34,8 +52,9 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
 
     [HttpPost("logout")]
     [Authorize]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout([FromBody] LogoutCommand command, CancellationToken cancellationToken)
     {
+        await sender.Send(command, cancellationToken);
         return Ok(new { message = "Logged out successfully." });
     }
 
@@ -67,7 +86,7 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
 
         HttpContext.Response.Cookies.Delete("oauth_state");
 
-        var result = await sender.Send(new GoogleLoginCommand(code), cancellationToken);
+        var result = await sender.Send(new GoogleLoginCommand(code, ClientIpAddress, ClientUserAgent), cancellationToken);
         if (result.Failed)
             return BadRequest(result.Errors);
 
