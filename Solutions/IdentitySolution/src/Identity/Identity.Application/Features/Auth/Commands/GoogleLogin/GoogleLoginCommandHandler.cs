@@ -15,6 +15,7 @@ public class GoogleLoginCommandHandler(
     IIdentityDbContext db,
     IAccountService accountService,
     ITokenService tokenService,
+    ISessionIssuer sessionIssuer,
     IHttpClientFactory httpClientFactory,
     IConfiguration config)
     : IRequestHandler<GoogleLoginCommand, Result<GoogleLoginResponse>>
@@ -33,13 +34,13 @@ public class GoogleLoginCommandHandler(
             .FirstOrDefaultAsync(o => o.Provider == Platform.Google && o.ProviderUserId == googleUser.Sub, cancellationToken);
 
         if (existingOAuth is not null)
-            return await HandleReturningUserAsync(existingOAuth, tokenResponse, cancellationToken);
+            return await HandleReturningUserAsync(existingOAuth, tokenResponse, request, cancellationToken);
 
         return await HandleNewUserAsync(googleUser, tokenResponse, cancellationToken);
     }
 
     private async Task<Result<GoogleLoginResponse>> HandleReturningUserAsync(
-        OAuthIdentity oAuth, GoogleTokenResponse tokenResponse, CancellationToken ct)
+        OAuthIdentity oAuth, GoogleTokenResponse tokenResponse, GoogleLoginCommand request, CancellationToken ct)
     {
         oAuth.EncryptedAccessToken = tokenResponse.AccessToken;
         oAuth.EncryptedRefreshToken = tokenResponse.RefreshToken;
@@ -50,13 +51,15 @@ public class GoogleLoginCommandHandler(
             .Include(p => p.Roles)
             .FirstOrDefaultAsync(p => p.AccountId == oAuth.AccountId, ct);
 
+        // Pre-profile-selection: short-lived account-only token, deliberately not refreshable.
         if (profile is null)
             return Result<GoogleLoginResponse>.Success(
-                new GoogleLoginResponse(oAuth.AccountId, null, tokenService.GenerateAccountOnlyToken(oAuth.AccountId), true));
+                new GoogleLoginResponse(oAuth.AccountId, null, tokenService.GenerateAccountOnlyToken(oAuth.AccountId), null, true));
 
-        var token = tokenService.GenerateToken(oAuth.AccountId, profile);
+        var (accessToken, refreshToken) = await sessionIssuer.IssueAsync(
+            oAuth.AccountId, profile, request.IpAddress, request.UserAgent, ct);
         return Result<GoogleLoginResponse>.Success(
-            new GoogleLoginResponse(oAuth.AccountId, profile.Id, token, false));
+            new GoogleLoginResponse(oAuth.AccountId, profile.Id, accessToken, refreshToken, false));
     }
 
     private async Task<Result<GoogleLoginResponse>> HandleNewUserAsync(
@@ -80,9 +83,10 @@ public class GoogleLoginCommandHandler(
         db.OAuthIdentities.Add(oAuthIdentity);
         await db.SaveChangesAsync(ct);
 
+        // Pre-profile-selection: short-lived account-only token, deliberately not refreshable.
         var token = tokenService.GenerateAccountOnlyToken(accountId);
         return Result<GoogleLoginResponse>.Success(
-            new GoogleLoginResponse(accountId, null, token, true));
+            new GoogleLoginResponse(accountId, null, token, null, true));
     }
 
     private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, CancellationToken ct)

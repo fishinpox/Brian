@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms alongside WPF just for System.Windows.Forms.NotifyIcon (tray icon) - no third-party package needed. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>NativeApp.Windows</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../NativeApp.Core/NativeApp.Core.csproj" />
+  </ItemGroup>
+
+</Project>

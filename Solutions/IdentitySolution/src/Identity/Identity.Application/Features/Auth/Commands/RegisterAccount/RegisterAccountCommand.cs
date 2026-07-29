@@ -7,4 +7,6 @@ public record RegisterAccountCommand(
     string Email,
     string Password,
     string Username,
-    string DisplayName) : IRequest<Result<RegisterAccountResponse>>;
+    string DisplayName,
+    string? IpAddress = null,
+    string? UserAgent = null) : IRequest<Result<RegisterAccountResponse>>;

@@ -10,7 +10,7 @@ namespace Identity.Application.Features.Auth.Commands.RegisterAccount;
 public class RegisterAccountCommandHandler(
     IAccountService accountService,
     IIdentityDbContext db,
-    ITokenService tokenService)
+    ISessionIssuer sessionIssuer)
     : IRequestHandler<RegisterAccountCommand, Result<RegisterAccountResponse>>
 {
     public async Task<Result<RegisterAccountResponse>> Handle(RegisterAccountCommand request, CancellationToken cancellationToken)
@@ -48,9 +48,10 @@ public class RegisterAccountCommandHandler(
         db.Profiles.Add(profile);
         await db.SaveChangesAsync(cancellationToken);
 
-        var token = tokenService.GenerateToken(accountId, profile);
+        var (accessToken, refreshToken) = await sessionIssuer.IssueAsync(
+            accountId, profile, request.IpAddress, request.UserAgent, cancellationToken);
 
         return Result<RegisterAccountResponse>.Success(
-            new RegisterAccountResponse(accountId, profile.Id, token));
+            new RegisterAccountResponse(accountId, profile.Id, accessToken, refreshToken));
     }
 }

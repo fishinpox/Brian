@@ -8,7 +8,7 @@ namespace Identity.Application.Features.Auth.Commands.Login;
 public class LoginCommandHandler(
     IAccountService accountService,
     IIdentityDbContext db,
-    ITokenService tokenService)
+    ISessionIssuer sessionIssuer)
     : IRequestHandler<LoginCommand, Result<LoginResponse>>
 {
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -30,10 +30,11 @@ public class LoginCommandHandler(
             ? profiles.FirstOrDefault(p => p.Id == request.PreferredProfileId.Value) ?? profiles[0]
             : profiles[0];
 
-        var token = tokenService.GenerateToken(accountId, profile);
+        var (accessToken, refreshToken) = await sessionIssuer.IssueAsync(
+            accountId, profile, request.IpAddress, request.UserAgent, cancellationToken);
         var roles = profile.Roles.Select(r => r.Role.ToString()).ToArray();
 
         return Result<LoginResponse>.Success(
-            new LoginResponse(accountId, profile.Id, token, roles));
+            new LoginResponse(accountId, profile.Id, accessToken, refreshToken, roles));
     }
 }
