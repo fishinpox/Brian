@@ -24,11 +24,10 @@ Solutions/
   HolodexSolution/          ← Holodex platform sync, :7009
   TwitchSolution/           ← Twitch platform sync, :7010
   YouTubeSolution/          ← YouTube platform sync, :7011
-  OnboardingSolution/       ← Onboarding.API (thin BFF hosting login.html/profile-setup.html), :7012
-  ModerationSolution/       ← Moderation.API (async content moderation), :7012 (port collision with Onboarding above —
-                               fix pending on branch claude/confident-roentgen-880bd0, moves Moderation to :7014)
   ChatSolution/             ← Chat.API (Stoat account provisioning), :7013; also vendors Stoat's self-hosted
                                Docker Compose stack under self-hosted/ (not a Brian service — see Key Conventions)
+  ModerationSolution/       ← Moderation.API (async content moderation), :7014
+  OnboardingSolution/       ← Onboarding.API (BFF hosting login.html/profile-setup.html), :7012
   Libraries/SharedLibraries/ ← reference copy of Shared.Contracts/Shared.Infrastructure (not a runnable solution)
   Connectors/               ← empty, reserved
 ```
@@ -66,11 +65,9 @@ There's no single `dotnet build` that covers every service — build/run each so
 | Holodex sync | `HolodexSolution` | 7009 |
 | Twitch sync | `TwitchSolution` | 7010 |
 | YouTube sync | `YouTubeSolution` | 7011 |
-| Onboarding | `OnboardingSolution` | 7012 |
-| Moderation | `ModerationSolution` | 7012 † |
 | Chat | `ChatSolution` | 7013 |
-
-† Collides with Onboarding — both currently default to `:7012`/`:5012`. A fix (moves Moderation to `:7014`/`:5014`) is pending on branch `claude/confident-roentgen-880bd0`; not yet merged into this branch.
+| Moderation | `ModerationSolution` | 7014 |
+| Onboarding | `OnboardingSolution` | 7012 |
 
 ## Local Infrastructure (docker-compose)
 
@@ -187,6 +184,7 @@ Shared.Contracts has zero dependencies (pure records). Shared.Infrastructure pro
 - **Static file caching fixed**: `Calendar.API`, `Identity.API`, and `Onboarding.API` now set `Cache-Control: no-cache, no-store, must-revalidate` on static files — previously a browser could keep serving a stale cached HTML/JS page after the file changed on disk.
 - **Chat window added** (`Documentation/Calendar/ChatWindow.md`): new `ChatSolution`/`Chat.API` (:7013) provisions a self-hosted [Stoat](https://github.com/stoatchat) (Discord-like, AGPL-3.0, deployed unmodified) account per Brian profile entirely server-side — `POST /auth/account/create` → `POST /auth/session/login` → `POST /onboard/complete`, no manual admin step, no email/captcha friction on this instance. Credentials are AES-256-GCM encrypted at rest (same pattern as Holodex's `ICredentialEncryptionService`) and handed to the frontend once per session for a one-time manual login into Stoat's own embedded web client — the embedded client uses email/password login only, no external-token-injection route exists, so this one manual step is the accepted target UX, not a fallback. Calendar.Web's `ChatPanel.tsx` embeds Stoat's real web client in an iframe (`src/config/platforms.ts`'s `STOAT_WEB_URL`). Self-hosted Stoat's real footprint is 15 containers (vendored at `Solutions/ChatSolution/self-hosted/`, cloned from `stoatchat/self-hosted`, run via its own `docker compose` invocation — **not** merged into the repo-root `docker-compose.yml`); only `voice-ingress`/`livekit` are excluded (text-only chat, nothing else depends on them). **Known local-dev-only gotcha**: Stoat's own `generate_config.sh` bakes an absolute `https://localhost` (no port) into `.env.web`/`stoat.json` regardless of what port its Caddy actually binds to — for a non-standard port (e.g. this repo's `:8880` reverse-proxy setup), those two files need manual editing to the real `http://localhost:8880/...` URLs afterward, and the `web` container needs `--force-recreate` (its own `inject.js` entrypoint re-bakes `VITE_*` env vars into the served bundle on every start, no image rebuild needed) plus clearing any stale Workbox service-worker cache in the browser. On real HTTPS + standard ports (matching Stoat's actual deployment assumption) this isn't needed at all.
 - **Refresh-token propagation fixed end-to-end**: the browser-facing login handoff (`Identity.API`'s `AuthController.GoogleCallback`, `Onboarding.API`'s `login.html`/`profile-setup.html`) previously only forwarded the access token, never the refresh token, even though Identity's `/api/auth/refresh` has worked since an earlier PR — Calendar.Web had zero refresh logic at all. Fixed on both ends: the redirects now carry `&refreshToken=`, and `Calendar.Web/src/lib/auth.ts` gained a single-flight `getValidAccessToken()` (silently refreshes an expiring token, deduped so two concurrent callers can't race the backend's refresh-token rotation into a reuse-detection revoke) used by both `apiClient.ts` and `signalr.ts`. Also found and fixed: `CreateProfileCommand` (the post-Google-signup profile-creation step) never minted a real profile-scoped session at all, leaving new Google sign-ups stuck on a 30-minute account-only token with no refresh path — it now calls the same `ISessionIssuer` that `Login`/`Register` use. And `Identity.API` had no CORS policy at all (only Calendar/Holodex/YouTube/Notifications had one from an earlier fix) — added, since the browser now calls `/api/auth/refresh` directly instead of only ever full-page-redirecting to Identity.
+- **Moderation.API port collision fixed**: `Moderation.API` moved from `:7012`/`:5012` to `:7014`/`:5014` — it collided with `Onboarding.API`, which also defaulted to `:7012`/`:5012` and is the one referenced by `Onboarding:BaseUrl` (Identity.API) and `ONBOARDING_LOGIN_URL` (Calendar.Web), so Moderation was the lower-risk service to move since nothing hardcodes its port. (Originally moved to `:7013`, but that's since been claimed by a new `Chat.API` service on a separate branch — bumped to `:7014` to avoid a second collision once both branches merge.)
 
 ## Phase Status
 
