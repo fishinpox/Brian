@@ -66,6 +66,6 @@ Stoat's own `generate_config.sh` bakes an absolute `https://localhost` (no port)
 
 Even after that fix, the pre-built `for-web` client image (labeled `v0.10.0`) talking to the pinned `v0.13.8` backend showed a further quirk **specific to the non-HTTPS local setup**: login API calls succeeded and returned a genuinely valid session (independently confirmed via direct API calls with the same token), but the client's own internal state machine marked the session invalid and wouldn't proceed past its login screen. **Confirmed fixed by using real HTTPS on standard ports** (Caddy's own auto-provisioned local-CA certificate, trusted once via Windows' certificate store) — logging in over `https://localhost/` worked cleanly and reached the real app. Since the actual target deployment is a real domain with real HTTPS (matching Stoat's own assumed shape), this is not expected to be an issue in production — it only surfaced because of the local HTTP-on-a-nonstandard-port workaround used for this repo's dev setup.
 
-## Known gap: port collision
+## Resolved gap: port collision
 
-`Moderation.API` and `Onboarding.API` both default to `:7012`/`:5012` — a pre-existing collision unrelated to this feature, noticed while assigning Chat.API's port (`:7013`). A fix (moves Moderation to `:7014`/`:5014`) is pending on branch `claude/confident-roentgen-880bd0`, not yet merged.
+`Moderation.API` and `Onboarding.API` both defaulted to `:7012`/`:5012` — a pre-existing collision unrelated to this feature, noticed while assigning Chat.API's port (`:7013`). Fixed by moving Moderation to `:7014`/`:5014` (see `CLAUDE.md`'s port table).
