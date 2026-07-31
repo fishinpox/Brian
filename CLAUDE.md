@@ -19,12 +19,16 @@ Solutions/
   CommunitySolution/        ← scaffold only, :7004
   AgencySolution/           ← scaffold only, :7005
   AnalyticsSolution/        ← scaffold only, :7006
-  MarketplaceSolution/      ← scaffold only, :7007
+  MarketplaceSolution/      ← Marketplace.{Domain,Application,Infrastructure,API} (wallpaper catalog/purchase/ownership), :7007
   NotificationsSolution/    ← Notifications.API (SignalR hub, consumers), :7008
   HolodexSolution/          ← Holodex platform sync, :7009
   TwitchSolution/           ← Twitch platform sync, :7010
   YouTubeSolution/          ← YouTube platform sync, :7011
-  ModerationSolution/       ← Moderation.API (async content moderation), :7012
+  OnboardingSolution/       ← Onboarding.API (thin BFF hosting login.html/profile-setup.html), :7012
+  ModerationSolution/       ← Moderation.API (async content moderation), :7012 (port collision with Onboarding above —
+                               fix pending on branch claude/confident-roentgen-880bd0, moves Moderation to :7014)
+  ChatSolution/             ← Chat.API (Stoat account provisioning), :7013; also vendors Stoat's self-hosted
+                               Docker Compose stack under self-hosted/ (not a Brian service — see Key Conventions)
   Libraries/SharedLibraries/ ← reference copy of Shared.Contracts/Shared.Infrastructure (not a runnable solution)
   Connectors/               ← empty, reserved
 ```
@@ -62,7 +66,11 @@ There's no single `dotnet build` that covers every service — build/run each so
 | Holodex sync | `HolodexSolution` | 7009 |
 | Twitch sync | `TwitchSolution` | 7010 |
 | YouTube sync | `YouTubeSolution` | 7011 |
-| Moderation | `ModerationSolution` | 7012 |
+| Onboarding | `OnboardingSolution` | 7012 |
+| Moderation | `ModerationSolution` | 7012 † |
+| Chat | `ChatSolution` | 7013 |
+
+† Collides with Onboarding — both currently default to `:7012`/`:5012`. A fix (moves Moderation to `:7014`/`:5014`) is pending on branch `claude/confident-roentgen-880bd0`; not yet merged into this branch.
 
 ## Local Infrastructure (docker-compose)
 
@@ -168,7 +176,7 @@ Shared.Contracts has zero dependencies (pure records). Shared.Infrastructure pro
 - **SignalR**: Hub at `/hubs/notifications` on Notifications service. Clients join group named by `profile_id`. JWT via query string `?access_token=` for SignalR connections.
 - **Hangfire**: Calendar service runs `reminder-dispatch` job (Cron.Minutely). Dashboard at `/hangfire`. Note: Calendar.API currently crashes at startup (unhandled exception) if SQL Server isn't reachable when this job registers — start `docker compose up -d` before Calendar.API.
 - **Refit**: `IHolodexApiClient` interface (with Refit attributes) lives in Holodex.Application — registered in Holodex.Infrastructure DI. `SearchChannelsAsync`'s `search` parameter is optional; omitting it returns Holodex's default browse list instead of requiring a name. Refit 13.1.0 generates the client implementation via a Roslyn source generator at compile time (no more runtime reflection/dynamic proxy) — an incremental/partial build left over from before a version bump can silently keep stale output around and throw `...doesn't look like a Refit interface` at runtime even though the code is fine. If that happens, do a full Clean + Rebuild (delete `bin`/`obj`) rather than assuming the interface needs changes.
-- **Credential encryption**: External credentials (e.g. Holodex API keys) are encrypted at rest with AES-256-GCM via `ICredentialEncryptionService` (`Holodex.Infrastructure/Services/AesCredentialEncryptionService.cs`), keyed by `Credentials:EncryptionKey` config/user-secrets — not Base64.
+- **Credential encryption**: External credentials (e.g. Holodex API keys, Chat.API's per-profile Stoat passwords) are encrypted at rest with AES-256-GCM via `ICredentialEncryptionService` (`*.Infrastructure/Services/AesCredentialEncryptionService.cs` — same implementation copied into each solution that needs it, e.g. Holodex and Chat), keyed by each solution's own `Credentials:EncryptionKey` config/user-secrets (not shared across solutions) — not Base64.
 - **Static files**: services that serve static HTML/JS (Identity, Calendar, Onboarding) set `Cache-Control: no-cache, no-store, must-revalidate` on `UseStaticFiles()` so browsers don't serve a stale page after a file changes on disk.
 - **File-scoped namespaces**, primary constructors, collection expressions (`[]`) — C# 13 style throughout.
 
@@ -177,12 +185,14 @@ Shared.Contracts has zero dependencies (pure records). Shared.Infrastructure pro
 - **Onboarding service extracted**: `Solutions/OnboardingSolution/` (Onboarding.API, port 7012) is a thin BFF that hosts `login.html`/`profile-setup.html`, moved out of `Identity.API/wwwroot`. It proxies `POST /api/auth/login` and `POST /api/profiles` server-to-server to Identity.API via `IHttpClientFactory` (no CORS needed — the browser only ever talks to Onboarding's own origin). Identity's Google OAuth callback redirects to `Onboarding:BaseUrl` for profile setup instead of a same-origin relative path. `holodex-setup.html` was intentionally left behind, unlinked, in `Identity.API/wwwroot` for later reintroduction.
 - **VTuber follow flow moved to its own page**: `Solutions/CalendarSolution/.../wwwroot/holodex-follow.html` replaces the old inline picklist in `calendar.html`. It auto-loads a browse list from Holodex on load, supports searching by name (selections persist across searches, keyed by `channelId`), and a "Finished" button saves the selection and returns to `calendar.html`. The Holodex section on `calendar.html` is now a `<fieldset>` groupbox that displays the actual list of followed VTubers, not just a count.
 - **Static file caching fixed**: `Calendar.API`, `Identity.API`, and `Onboarding.API` now set `Cache-Control: no-cache, no-store, must-revalidate` on static files — previously a browser could keep serving a stale cached HTML/JS page after the file changed on disk.
+- **Chat window added** (`Documentation/Calendar/ChatWindow.md`): new `ChatSolution`/`Chat.API` (:7013) provisions a self-hosted [Stoat](https://github.com/stoatchat) (Discord-like, AGPL-3.0, deployed unmodified) account per Brian profile entirely server-side — `POST /auth/account/create` → `POST /auth/session/login` → `POST /onboard/complete`, no manual admin step, no email/captcha friction on this instance. Credentials are AES-256-GCM encrypted at rest (same pattern as Holodex's `ICredentialEncryptionService`) and handed to the frontend once per session for a one-time manual login into Stoat's own embedded web client — the embedded client uses email/password login only, no external-token-injection route exists, so this one manual step is the accepted target UX, not a fallback. Calendar.Web's `ChatPanel.tsx` embeds Stoat's real web client in an iframe (`src/config/platforms.ts`'s `STOAT_WEB_URL`). Self-hosted Stoat's real footprint is 15 containers (vendored at `Solutions/ChatSolution/self-hosted/`, cloned from `stoatchat/self-hosted`, run via its own `docker compose` invocation — **not** merged into the repo-root `docker-compose.yml`); only `voice-ingress`/`livekit` are excluded (text-only chat, nothing else depends on them). **Known local-dev-only gotcha**: Stoat's own `generate_config.sh` bakes an absolute `https://localhost` (no port) into `.env.web`/`stoat.json` regardless of what port its Caddy actually binds to — for a non-standard port (e.g. this repo's `:8880` reverse-proxy setup), those two files need manual editing to the real `http://localhost:8880/...` URLs afterward, and the `web` container needs `--force-recreate` (its own `inject.js` entrypoint re-bakes `VITE_*` env vars into the served bundle on every start, no image rebuild needed) plus clearing any stale Workbox service-worker cache in the browser. On real HTTPS + standard ports (matching Stoat's actual deployment assumption) this isn't needed at all.
+- **Refresh-token propagation fixed end-to-end**: the browser-facing login handoff (`Identity.API`'s `AuthController.GoogleCallback`, `Onboarding.API`'s `login.html`/`profile-setup.html`) previously only forwarded the access token, never the refresh token, even though Identity's `/api/auth/refresh` has worked since an earlier PR — Calendar.Web had zero refresh logic at all. Fixed on both ends: the redirects now carry `&refreshToken=`, and `Calendar.Web/src/lib/auth.ts` gained a single-flight `getValidAccessToken()` (silently refreshes an expiring token, deduped so two concurrent callers can't race the backend's refresh-token rotation into a reuse-detection revoke) used by both `apiClient.ts` and `signalr.ts`. Also found and fixed: `CreateProfileCommand` (the post-Google-signup profile-creation step) never minted a real profile-scoped session at all, leaving new Google sign-ups stuck on a 30-minute account-only token with no refresh path — it now calls the same `ISessionIssuer` that `Login`/`Register` use. And `Identity.API` had no CORS policy at all (only Calendar/Holodex/YouTube/Notifications had one from an earlier fix) — added, since the browser now calls `/api/auth/refresh` directly instead of only ever full-page-redirecting to Identity.
 
 ## Phase Status
 
 - **Phase 0** ✅ — Solution scaffold, Shared libraries, docker-compose, Gateway, Central Package Management
 - **Phase 1** ✅ — Identity service (auth/profiles/JWT/OpenIddict), Calendar service (events/reminders/Holodex/background image upload with async moderation pipeline), Notifications service (SignalR hub, StreamGoLive consumer, reminder dispatch endpoint, calendar-background-ready push)
-- **Unplanned/ahead of the phase list, but real**: Holodex/Twitch/YouTube platform-sync services (`HolodexSolution`, `TwitchSolution`, `YouTubeSolution`) and the Moderation service (`ModerationSolution`) all have working implementations, even though the phases below haven't formally started.
+- **Unplanned/ahead of the phase list, but real**: Holodex/Twitch/YouTube platform-sync services (`HolodexSolution`, `TwitchSolution`, `YouTubeSolution`), the Moderation service (`ModerationSolution`), and the Chat window feature (`ChatSolution`) all have working implementations, even though the phases below haven't formally started.
 - **Phase 2** — Creator service, Community service (gamification, badges) — solutions are scaffolded (`Program.cs` + shared boilerplate only), no feature code yet
 - **Phase 3** — Agency, Analytics, SignalR Redis scale-out — scaffolded only
 - **Phase 4** — Marketplace, payments, AI assistant — scaffolded only

@@ -1,8 +1,12 @@
+export const IDENTITY_API = 'https://localhost:7001';
 export const CALENDAR_API = 'https://localhost:7002';
 export const HOLODEX_API = 'https://localhost:7009';
 export const YOUTUBE_API = 'https://localhost:7011';
 export const NOTIFICATIONS_API = 'https://localhost:7008';
+export const CHAT_API = 'https://localhost:7013';
 export const ONBOARDING_LOGIN_URL = 'https://localhost:7012/login.html';
+/** Self-hosted Stoat's own web client, embedded directly for guaranteed Discord-parity UX. */
+export const STOAT_WEB_URL = 'http://localhost:8880';
 
 export interface PlatformConfig {
   key: 'holodex' | 'youtube';

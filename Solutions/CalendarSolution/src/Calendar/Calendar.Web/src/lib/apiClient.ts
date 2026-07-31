@@ -1,4 +1,4 @@
-import { getToken, logout } from './auth';
+import { getValidAccessToken, logout } from './auth';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -7,7 +7,7 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch(baseUrl: string, path: string, init: RequestInit = {}): Promise<Response> {
-  const token = getToken();
+  const token = await getValidAccessToken();
 
   const res = await fetch(baseUrl + path, {
     ...init,

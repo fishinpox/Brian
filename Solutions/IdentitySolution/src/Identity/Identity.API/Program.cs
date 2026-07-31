@@ -44,6 +44,14 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(opts =>
+{
+    opts.AddDefaultPolicy(policy => policy
+        .WithOrigins("http://localhost:5173")
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
 var app = builder.Build();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSerilogRequestLogging();
@@ -58,6 +66,7 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.Expires = "0";
     }
 });
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
