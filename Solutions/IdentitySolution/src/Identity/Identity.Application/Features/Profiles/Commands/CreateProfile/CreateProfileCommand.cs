@@ -1,4 +1,3 @@
-using Identity.Application.Common.DTOs;
 using Identity.Domain.Enums;
 using MediatR;
 using Shared.Infrastructure.Common;
@@ -10,4 +9,6 @@ public record CreateProfileCommand(
     string DisplayName,
     UserRole Role,
     string? AvatarUrl,
-    string Password) : IRequest<Result<ProfileDto>>;
+    string Password,
+    string? IpAddress = null,
+    string? UserAgent = null) : IRequest<Result<CreateProfileResponse>>;

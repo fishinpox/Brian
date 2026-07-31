@@ -13,19 +13,20 @@ public class CreateProfileCommandHandler(
     IIdentityDbContext db,
     ICurrentUserService currentUserService,
     IAccountService accountService,
-    IPublishEndpoint publishEndpoint)
-    : IRequestHandler<CreateProfileCommand, Result<ProfileDto>>
+    IPublishEndpoint publishEndpoint,
+    ISessionIssuer sessionIssuer)
+    : IRequestHandler<CreateProfileCommand, Result<CreateProfileResponse>>
 {
-    public async Task<Result<ProfileDto>> Handle(CreateProfileCommand request, CancellationToken cancellationToken)
+    public async Task<Result<CreateProfileResponse>> Handle(CreateProfileCommand request, CancellationToken cancellationToken)
     {
         var accountId = currentUserService.AccountId;
         if (accountId is null)
-            return Result<ProfileDto>.Failure("User is not authenticated.");
+            return Result<CreateProfileResponse>.Failure("User is not authenticated.");
 
         var usernameExists = await db.Profiles
             .AnyAsync(p => p.Username == request.Username, cancellationToken);
         if (usernameExists)
-            return Result<ProfileDto>.Failure("Username is already taken.");
+            return Result<CreateProfileResponse>.Failure("Username is already taken.");
 
         // Set this before creating the profile so a password failure doesn't
         // leave a profile persisted without one -- Google sign-ups reach here
@@ -35,7 +36,7 @@ public class CreateProfileCommandHandler(
         var (passwordSet, passwordErrors) = await accountService.SetPasswordAsync(
             accountId.Value, request.Password, cancellationToken);
         if (!passwordSet)
-            return Result<ProfileDto>.Failure(passwordErrors);
+            return Result<CreateProfileResponse>.Failure(passwordErrors);
 
         var profile = new Profile
         {
@@ -77,6 +78,9 @@ public class CreateProfileCommandHandler(
             profile.Roles.Select(r => r.Role.ToString()).ToArray(),
             profile.CreatedAt);
 
-        return Result<ProfileDto>.Success(dto);
+        var (accessToken, refreshToken) = await sessionIssuer.IssueAsync(
+            accountId.Value, profile, request.IpAddress, request.UserAgent, cancellationToken);
+
+        return Result<CreateProfileResponse>.Success(new CreateProfileResponse(dto, accessToken, refreshToken));
     }
 }

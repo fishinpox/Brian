@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CalendarPage } from './routes/CalendarPage';
 import { FollowPage } from './routes/FollowPage';
 import { FontPicker } from './components/FontPicker';
+import { ChatPanel } from './components/ChatPanel';
 import { captureTokenFromUrl, getToken, redirectToLogin } from './lib/auth';
 import { useNotificationHub } from './lib/useNotificationHub';
 
@@ -26,7 +27,8 @@ export function App() {
 
   return (
     <div>
-      <div className="flex justify-end px-6 pt-4">
+      <div className="flex justify-end gap-3 px-6 pt-4">
+        <ChatPanel />
         <FontPicker />
       </div>
       <AnimatePresence mode="wait">

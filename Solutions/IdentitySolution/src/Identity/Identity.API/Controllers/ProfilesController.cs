@@ -13,6 +13,9 @@ namespace Identity.API.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class ProfilesController(ISender sender) : ControllerBase
 {
+    private string? ClientIpAddress => HttpContext.Connection.RemoteIpAddress?.ToString();
+    private string? ClientUserAgent => Request.Headers.UserAgent.ToString() is { Length: > 0 } ua ? ua : null;
+
     [HttpGet]
     public async Task<IActionResult> GetProfiles(CancellationToken cancellationToken)
     {
@@ -26,7 +29,8 @@ public class ProfilesController(ISender sender) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProfile([FromBody] CreateProfileCommand command, CancellationToken cancellationToken)
     {
-        var result = await sender.Send(command, cancellationToken);
+        var enriched = command with { IpAddress = ClientIpAddress, UserAgent = ClientUserAgent };
+        var result = await sender.Send(enriched, cancellationToken);
         if (result.Failed)
             return BadRequest(result.Errors);
 

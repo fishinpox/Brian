@@ -98,6 +98,7 @@ public class AuthController(ISender sender, IConfiguration config) : ControllerB
         }
 
         var calendarWebBaseUrl = config["Frontend:CalendarWebBaseUrl"];
-        return Redirect($"{calendarWebBaseUrl}/?token={Uri.EscapeDataString(response.Token)}");
+        var refreshTokenParam = response.RefreshToken is { Length: > 0 } rt ? $"&refreshToken={Uri.EscapeDataString(rt)}" : "";
+        return Redirect($"{calendarWebBaseUrl}/?token={Uri.EscapeDataString(response.Token)}{refreshTokenParam}");
     }
 }
