@@ -24,7 +24,8 @@ Solutions/
   HolodexSolution/          ← Holodex platform sync, :7009
   TwitchSolution/           ← Twitch platform sync, :7010
   YouTubeSolution/          ← YouTube platform sync, :7011
-  ModerationSolution/       ← Moderation.API (async content moderation), :7012
+  ModerationSolution/       ← Moderation.API (async content moderation), :7014
+  OnboardingSolution/       ← Onboarding.API (BFF hosting login.html/profile-setup.html), :7012
   Libraries/SharedLibraries/ ← reference copy of Shared.Contracts/Shared.Infrastructure (not a runnable solution)
   Connectors/               ← empty, reserved
 ```
@@ -62,7 +63,8 @@ There's no single `dotnet build` that covers every service — build/run each so
 | Holodex sync | `HolodexSolution` | 7009 |
 | Twitch sync | `TwitchSolution` | 7010 |
 | YouTube sync | `YouTubeSolution` | 7011 |
-| Moderation | `ModerationSolution` | 7012 |
+| Moderation | `ModerationSolution` | 7014 |
+| Onboarding | `OnboardingSolution` | 7012 |
 
 ## Local Infrastructure (docker-compose)
 
@@ -177,6 +179,7 @@ Shared.Contracts has zero dependencies (pure records). Shared.Infrastructure pro
 - **Onboarding service extracted**: `Solutions/OnboardingSolution/` (Onboarding.API, port 7012) is a thin BFF that hosts `login.html`/`profile-setup.html`, moved out of `Identity.API/wwwroot`. It proxies `POST /api/auth/login` and `POST /api/profiles` server-to-server to Identity.API via `IHttpClientFactory` (no CORS needed — the browser only ever talks to Onboarding's own origin). Identity's Google OAuth callback redirects to `Onboarding:BaseUrl` for profile setup instead of a same-origin relative path. `holodex-setup.html` was intentionally left behind, unlinked, in `Identity.API/wwwroot` for later reintroduction.
 - **VTuber follow flow moved to its own page**: `Solutions/CalendarSolution/.../wwwroot/holodex-follow.html` replaces the old inline picklist in `calendar.html`. It auto-loads a browse list from Holodex on load, supports searching by name (selections persist across searches, keyed by `channelId`), and a "Finished" button saves the selection and returns to `calendar.html`. The Holodex section on `calendar.html` is now a `<fieldset>` groupbox that displays the actual list of followed VTubers, not just a count.
 - **Static file caching fixed**: `Calendar.API`, `Identity.API`, and `Onboarding.API` now set `Cache-Control: no-cache, no-store, must-revalidate` on static files — previously a browser could keep serving a stale cached HTML/JS page after the file changed on disk.
+- **Moderation.API port collision fixed**: `Moderation.API` moved from `:7012`/`:5012` to `:7014`/`:5014` — it collided with `Onboarding.API`, which also defaulted to `:7012`/`:5012` and is the one referenced by `Onboarding:BaseUrl` (Identity.API) and `ONBOARDING_LOGIN_URL` (Calendar.Web), so Moderation was the lower-risk service to move since nothing hardcodes its port. (Originally moved to `:7013`, but that's since been claimed by a new `Chat.API` service on a separate branch — bumped to `:7014` to avoid a second collision once both branches merge.)
 
 ## Phase Status
 
