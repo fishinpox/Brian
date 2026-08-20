@@ -29,7 +29,9 @@ export function CalendarPage() {
   const events = useCalendarEvents(from, to);
   const token = getToken();
   const claims = token ? decodeJwt(token) : null;
-  const roles = Array.isArray(claims?.roles) ? (claims.roles as string[]) : [];
+  // A single-role JWT serializes `roles` as a bare string rather than a one-element array.
+  const rawRoles = claims?.roles;
+  const roles = Array.isArray(rawRoles) ? (rawRoles as string[]) : typeof rawRoles === 'string' ? [rawRoles] : [];
   const isCreator = roles.includes('Creator');
   const navigate = useNavigate();
 
