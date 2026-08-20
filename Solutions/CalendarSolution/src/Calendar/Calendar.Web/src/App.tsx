@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { CalendarPage } from './routes/CalendarPage';
 import { FollowPage } from './routes/FollowPage';
+import { VTuberHubPage } from './routes/VTuberHubPage';
 import { FontPicker } from './components/FontPicker';
 import { ChatPanel } from './components/ChatPanel';
 import { captureTokenFromUrl, getToken, redirectToLogin } from './lib/auth';
@@ -42,6 +43,7 @@ export function App() {
           <Routes location={location}>
             <Route path="/" element={<CalendarPage />} />
             <Route path="/follow/:platform" element={<FollowPage />} />
+            <Route path="/vtuberhub" element={<VTuberHubPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>
