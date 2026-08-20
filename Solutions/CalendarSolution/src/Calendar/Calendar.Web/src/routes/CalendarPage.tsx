@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -28,6 +29,11 @@ export function CalendarPage() {
   const events = useCalendarEvents(from, to);
   const token = getToken();
   const claims = token ? decodeJwt(token) : null;
+  // A single-role JWT serializes `roles` as a bare string rather than a one-element array.
+  const rawRoles = claims?.roles;
+  const roles = Array.isArray(rawRoles) ? (rawRoles as string[]) : typeof rawRoles === 'string' ? [rawRoles] : [];
+  const isCreator = roles.includes('Creator');
+  const navigate = useNavigate();
 
   const fullCalendarEvents: EventInput[] = (events.data ?? []).map((item) => ({
     id: item.id,
@@ -75,6 +81,25 @@ export function CalendarPage() {
 
       <ConnectionGroupbox config={PLATFORM_CONFIGS.holodex} />
       <ConnectionGroupbox config={PLATFORM_CONFIGS.youtube} />
+
+      {isCreator && (
+        <div className="fixed bottom-4 right-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/vtuberhub')}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2.5 text-xs text-gray-600 shadow-sm transition hover:bg-gray-100"
+          >
+            Edit Public Website
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/vtuberhub')}
+            className="rounded-md bg-blue-500 px-4 py-2.5 text-xs text-white shadow-sm transition hover:bg-blue-600"
+          >
+            VTuberHub
+          </button>
+        </div>
+      )}
     </div>
   );
 }
