@@ -14,6 +14,15 @@ public class PersonalEvent : BaseAuditableEntity
     public bool IsAllDay { get; private set; }
     public string? RecurrenceRule { get; private set; }
     public EventStatus Status { get; private set; }
+    public Guid? SubfolderId { get; private set; }
+    public bool IsVisible { get; private set; } = true;
+    public CountdownCategory? CountdownCategory { get; private set; }
+    public bool IsCompleted { get; private set; }
+    public DateTimeOffset? CompletedAt { get; private set; }
+    public RecurrenceType RecurrenceType { get; private set; } = RecurrenceType.None;
+    public DateTimeOffset? RecurrenceEndDate { get; private set; }
+    public bool AutoDeferEnabled { get; private set; } = true;
+    public int DeferCount { get; private set; }
 
     private PersonalEvent() { }
 
@@ -63,5 +72,46 @@ public class PersonalEvent : BaseAuditableEntity
         EndAt = endAt;
         IsAllDay = isAllDay;
         RecurrenceRule = recurrenceRule;
+    }
+
+    public void Reschedule(DateTimeOffset newStartAt)
+    {
+        if (EndAt.HasValue)
+        {
+            var duration = EndAt.Value - StartAt;
+            EndAt = newStartAt + duration;
+        }
+
+        StartAt = newStartAt;
+    }
+
+    public void AssignToSubfolder(Guid? subfolderId) => SubfolderId = subfolderId;
+
+    public void SetVisibility(bool isVisible) => IsVisible = isVisible;
+
+    public void SetCountdownCategory(CountdownCategory? category) => CountdownCategory = category;
+
+    public void SetCompletion(bool isCompleted)
+    {
+        IsCompleted = isCompleted;
+        CompletedAt = isCompleted ? DateTimeOffset.UtcNow : null;
+    }
+
+    public void SetRecurrence(RecurrenceType recurrenceType, DateTimeOffset? recurrenceEndDate)
+    {
+        RecurrenceType = recurrenceType;
+        RecurrenceEndDate = recurrenceEndDate;
+    }
+
+    public void SetAutoDefer(bool autoDeferEnabled) => AutoDeferEnabled = autoDeferEnabled;
+
+    /// <summary>
+    /// Distinct from <see cref="Reschedule"/> (used by drag-and-drop) - this bumps DeferCount so the
+    /// auto-defer job's 7-consecutive-day cap can actually stop deferring, per the story's requirement.
+    /// </summary>
+    public void DeferToDate(DateTimeOffset newStartAt)
+    {
+        Reschedule(newStartAt);
+        DeferCount++;
     }
 }

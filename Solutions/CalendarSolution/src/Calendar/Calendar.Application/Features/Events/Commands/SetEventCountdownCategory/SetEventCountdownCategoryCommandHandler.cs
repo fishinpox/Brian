@@ -1,0 +1,29 @@
+using Calendar.Application.Common.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Shared.Infrastructure.Common;
+using Shared.Infrastructure.Common.Exceptions;
+
+namespace Calendar.Application.Features.Events.Commands.SetEventCountdownCategory;
+
+public class SetEventCountdownCategoryCommandHandler(ICalendarDbContext db, ICurrentUserService currentUser)
+    : IRequestHandler<SetEventCountdownCategoryCommand, Result>
+{
+    public async Task<Result> Handle(SetEventCountdownCategoryCommand request, CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsAuthenticated || currentUser.ProfileId is null)
+            throw new ForbiddenAccessException();
+
+        var personalEvent = await db.PersonalEvents
+            .FirstOrDefaultAsync(e => e.Id == request.EventId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Domain.Entities.PersonalEvent), request.EventId);
+
+        if (personalEvent.ProfileId != currentUser.ProfileId.Value)
+            throw new ForbiddenAccessException();
+
+        personalEvent.SetCountdownCategory(request.Category);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+}

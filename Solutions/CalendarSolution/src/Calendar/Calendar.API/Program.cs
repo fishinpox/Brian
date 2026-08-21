@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration));
@@ -31,7 +32,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(opts =>
@@ -67,6 +69,11 @@ RecurringJob.AddOrUpdate<Calendar.Infrastructure.Jobs.ReminderDispatchJob>(
     "reminder-dispatch",
     j => j.ExecuteAsync(CancellationToken.None),
     Cron.Minutely());
+
+RecurringJob.AddOrUpdate<Calendar.Infrastructure.Jobs.AutoDeferJob>(
+    "auto-defer",
+    j => j.ExecuteAsync(CancellationToken.None),
+    Cron.Daily());
 
 app.Run();
 

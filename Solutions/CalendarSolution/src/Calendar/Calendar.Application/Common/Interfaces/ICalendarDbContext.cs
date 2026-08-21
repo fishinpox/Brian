@@ -9,5 +9,10 @@ public interface ICalendarDbContext
     DbSet<Reminder> Reminders { get; }
     DbSet<StreamEvent> StreamEvents { get; }
     DbSet<CalendarBackground> CalendarBackgrounds { get; }
+    DbSet<Folder> Folders { get; }
+    DbSet<Subfolder> Subfolders { get; }
+    DbSet<CalendarSettings> CalendarSettings { get; }
+    DbSet<Memo> Memos { get; }
+    DbSet<Note> Notes { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
