@@ -12,6 +12,11 @@ public class CalendarDbContext(DbContextOptions<CalendarDbContext> options)
     public DbSet<Reminder> Reminders => Set<Reminder>();
     public DbSet<StreamEvent> StreamEvents => Set<StreamEvent>();
     public DbSet<CalendarBackground> CalendarBackgrounds => Set<CalendarBackground>();
+    public DbSet<Folder> Folders => Set<Folder>();
+    public DbSet<Subfolder> Subfolders => Set<Subfolder>();
+    public DbSet<CalendarSettings> CalendarSettings => Set<CalendarSettings>();
+    public DbSet<Memo> Memos => Set<Memo>();
+    public DbSet<Note> Notes => Set<Note>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

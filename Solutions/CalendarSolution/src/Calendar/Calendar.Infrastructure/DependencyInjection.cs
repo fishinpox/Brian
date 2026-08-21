@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddHangfireServer();
 
         services.AddScoped<ReminderDispatchJob>();
+        services.AddScoped<AutoDeferJob>();
 
         return services;
     }

@@ -1,3 +1,4 @@
+using Calendar.Application.Common;
 using Calendar.Application.Common.Interfaces;
 using Calendar.Domain.Enums;
 using MediatR;
@@ -29,6 +30,8 @@ public class GetCalendarViewQueryHandler(
             .Where(e => e.ScheduledStart >= request.From && e.ScheduledStart <= request.To)
             .ToListAsync(cancellationToken);
 
+        var lockLookup = await BulkFolderLockLookup.LoadAsync(db, profileId, cancellationToken);
+
         var personalEventDtos = personalEvents
             .Select(e => new PersonalEventDto(
                 e.Id,
@@ -38,7 +41,15 @@ public class GetCalendarViewQueryHandler(
                 e.StartAt,
                 e.EndAt,
                 e.IsAllDay,
-                e.Status.ToString()))
+                e.Status.ToString(),
+                e.SubfolderId,
+                e.IsVisible,
+                lockLookup.IsDraggable(e.SubfolderId),
+                e.IsCompleted,
+                e.CountdownCategory?.ToString(),
+                e.RecurrenceType.ToString(),
+                e.RecurrenceEndDate,
+                e.AutoDeferEnabled))
             .ToList();
 
         var streamEventDtos = streamEvents
