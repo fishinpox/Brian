@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type DragEvent as ReactDragEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type DragEvent as ReactDragEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCalendarEvents, type CalendarItem, type CountdownCategory, type PersonalEvent } from '../lib/queries/calendarQueries';
 import { useCalendarSettings, useFolderTree, useMoveEventDate, type Folder } from '../lib/queries/folderQueries';
 import { useMemos } from '../lib/queries/memoQueries';
+import { useCalendarBackground, useUploadCalendarBackground } from '../lib/queries/backgroundQueries';
 import { EventList } from '../components/EventList';
 import { ConnectionGroupbox } from '../components/ConnectionGroupbox';
 import { FolderTree } from '../components/FolderTree';
@@ -57,6 +58,8 @@ export function CalendarPage() {
   const folderTree = useFolderTree();
   const settings = useCalendarSettings();
   const moveEventDate = useMoveEventDate();
+  const background = useCalendarBackground();
+  const uploadBackground = useUploadCalendarBackground();
 
   const token = getToken();
   const claims = token ? decodeJwt(token) : null;
@@ -71,11 +74,30 @@ export function CalendarPage() {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const [editorState, setEditorState] = useState<{ date: Date; eventId?: string } | null>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
 
   function showToast(message: string) {
     setToast(message);
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 2500);
+  }
+
+  function handleBackgroundFileSelected(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      showToast('Background must be a PNG or JPEG image.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Background image must be 10 MB or smaller.');
+      return;
+    }
+    uploadBackground.mutate(file, {
+      onSuccess: () => showToast('Image submitted!'),
+      onError: () => showToast('Could not upload that image.'),
+    });
   }
 
   const subfolderToFolder = useMemo(() => {
@@ -173,6 +195,8 @@ export function CalendarPage() {
     );
   }
 
+  const panelBackground = settings.data?.transparentBackground ? 'bg-white/25 backdrop-blur-sm' : 'bg-white';
+
   const prevMonthDate = new Date(viewStart.getFullYear(), viewStart.getMonth() - 1, 1);
   const nextMonthDate = new Date(viewStart.getFullYear(), viewStart.getMonth() + 1, 1);
 
@@ -190,7 +214,14 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10">
+    <div
+      className="mx-auto max-w-6xl px-6 py-10"
+      style={
+        background.data
+          ? { backgroundImage: `url(${background.data})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
+          : undefined
+      }
+    >
       <header className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-800">Brian</h1>
@@ -200,6 +231,21 @@ export function CalendarPage() {
         </div>
         <div className="flex items-center gap-2">
           <PluginMenu onOpenEvent={(event) => setEditorState({ date: new Date(event.startAt), eventId: event.id })} />
+          <input
+            ref={backgroundFileInputRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            onChange={handleBackgroundFileSelected}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => backgroundFileInputRef.current?.click()}
+            disabled={uploadBackground.isPending}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+          >
+            🖼 {uploadBackground.isPending ? 'Uploading…' : 'Background'}
+          </button>
           <button
             type="button"
             onClick={logout}
@@ -247,7 +293,7 @@ export function CalendarPage() {
             )}
           </AnimatePresence>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className={`rounded-lg border border-gray-200 p-4 shadow-sm ${panelBackground}`}>
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
@@ -344,13 +390,13 @@ export function CalendarPage() {
             />
           </div>
 
-          <div className="mt-6 rounded-lg bg-white p-6 shadow-sm">
+          <div className={`mt-6 rounded-lg p-6 shadow-sm ${panelBackground}`}>
             <h2 className="mb-4 text-base font-semibold text-gray-800">Upcoming</h2>
             <EventList items={visibleItems} isLoading={events.isLoading} isError={events.isError} />
           </div>
 
-          <ConnectionGroupbox config={PLATFORM_CONFIGS.holodex} />
-          <ConnectionGroupbox config={PLATFORM_CONFIGS.youtube} />
+          <ConnectionGroupbox config={PLATFORM_CONFIGS.holodex} transparent={settings.data?.transparentBackground} />
+          <ConnectionGroupbox config={PLATFORM_CONFIGS.youtube} transparent={settings.data?.transparentBackground} />
         </div>
       </div>
 

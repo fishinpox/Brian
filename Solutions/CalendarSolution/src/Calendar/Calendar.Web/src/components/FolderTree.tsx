@@ -309,8 +309,10 @@ export function FolderTree() {
     updateSettings.mutate({ ...settings.data, masterLockEnabled: !settings.data.masterLockEnabled });
   }
 
+  const panelBackground = settings.data?.transparentBackground ? 'bg-white/25 backdrop-blur-sm' : 'bg-white';
+
   return (
-    <div className="w-72 flex-shrink-0 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+    <div className={`w-72 flex-shrink-0 rounded-lg border border-gray-200 p-3 shadow-sm ${panelBackground}`}>
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">Calendar Folders</h2>
         <button
@@ -349,7 +351,7 @@ export function FolderTree() {
                 }
               />
             </label>
-            <label className="flex items-center justify-between">
+            <label className="mb-1.5 flex items-center justify-between">
               <span>Due-soon window (hours)</span>
               <input
                 type="number"
@@ -360,6 +362,14 @@ export function FolderTree() {
                   updateSettings.mutate({ ...settings.data!, dueSoonWindowHours: Number(e.target.value) })
                 }
                 className="w-16 rounded border border-gray-300 px-1 py-0.5"
+              />
+            </label>
+            <label className="flex items-center justify-between">
+              <span>Transparent background</span>
+              <input
+                type="checkbox"
+                checked={settings.data.transparentBackground}
+                onChange={(e) => updateSettings.mutate({ ...settings.data!, transparentBackground: e.target.checked })}
               />
             </label>
           </motion.div>

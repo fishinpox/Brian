@@ -40,6 +40,7 @@ export interface CalendarSettings {
   lockFoldersByDefault: boolean;
   autoRecolorByTimeSensitivity: boolean;
   dueSoonWindowHours: number;
+  transparentBackground: boolean;
 }
 
 const FOLDER_TREE_KEY = ['folder-tree'];

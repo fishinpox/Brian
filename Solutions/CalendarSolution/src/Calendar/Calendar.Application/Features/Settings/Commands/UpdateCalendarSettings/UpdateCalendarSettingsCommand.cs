@@ -8,4 +8,5 @@ public record UpdateCalendarSettingsCommand(
     bool MasterLockEnabled,
     bool LockFoldersByDefault,
     bool AutoRecolorByTimeSensitivity,
-    int DueSoonWindowHours) : IRequest<Result<CalendarSettingsDto>>;
+    int DueSoonWindowHours,
+    bool TransparentBackground) : IRequest<Result<CalendarSettingsDto>>;

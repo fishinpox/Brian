@@ -1,17 +1,15 @@
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { createNotificationConnection } from './signalr';
+import { BACKGROUND_KEY } from './queries/backgroundQueries';
 
-/**
- * Connects to the Notifications hub for the lifetime of the app and logs
- * calendar-background-ready pushes. The background-upload UI itself is a
- * separate follow-up (see Documentation/Calendar/FrontEndTechnologyChoices.md) -
- * this hook only proves the SignalR connection, auth, and CORS path work.
- */
 export function useNotificationHub() {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     const connection = createNotificationConnection();
     connection.on('calendar-background-ready', () => {
-      console.log('calendar-background-ready notification received');
+      queryClient.invalidateQueries({ queryKey: BACKGROUND_KEY });
     });
 
     let stopped = false;

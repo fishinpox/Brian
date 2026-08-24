@@ -16,10 +16,10 @@ public class UpdateCalendarSettingsCommandHandler(ICalendarDbContext db, ICurren
             throw new ForbiddenAccessException();
 
         var settings = await CalendarSettingsHelper.GetOrCreateAsync(db, currentUser.ProfileId.Value, cancellationToken);
-        settings.Update(request.MasterLockEnabled, request.LockFoldersByDefault, request.AutoRecolorByTimeSensitivity, request.DueSoonWindowHours);
+        settings.Update(request.MasterLockEnabled, request.LockFoldersByDefault, request.AutoRecolorByTimeSensitivity, request.DueSoonWindowHours, request.TransparentBackground);
         await db.SaveChangesAsync(cancellationToken);
 
         return Result<CalendarSettingsDto>.Success(new CalendarSettingsDto(
-            settings.MasterLockEnabled, settings.LockFoldersByDefault, settings.AutoRecolorByTimeSensitivity, settings.DueSoonWindowHours));
+            settings.MasterLockEnabled, settings.LockFoldersByDefault, settings.AutoRecolorByTimeSensitivity, settings.DueSoonWindowHours, settings.TransparentBackground));
     }
 }

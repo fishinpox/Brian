@@ -18,6 +18,6 @@ public class GetCalendarSettingsQueryHandler(ICalendarDbContext db, ICurrentUser
         var settings = await CalendarSettingsHelper.GetOrCreateAsync(db, currentUser.ProfileId.Value, cancellationToken);
 
         return Result<CalendarSettingsDto>.Success(new CalendarSettingsDto(
-            settings.MasterLockEnabled, settings.LockFoldersByDefault, settings.AutoRecolorByTimeSensitivity, settings.DueSoonWindowHours));
+            settings.MasterLockEnabled, settings.LockFoldersByDefault, settings.AutoRecolorByTimeSensitivity, settings.DueSoonWindowHours, settings.TransparentBackground));
     }
 }

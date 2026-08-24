@@ -9,6 +9,7 @@ public class CalendarSettings : BaseAuditableEntity
     public bool LockFoldersByDefault { get; private set; }
     public bool AutoRecolorByTimeSensitivity { get; private set; }
     public int DueSoonWindowHours { get; private set; } = 24;
+    public bool TransparentBackground { get; private set; }
 
     private CalendarSettings() { }
 
@@ -20,15 +21,17 @@ public class CalendarSettings : BaseAuditableEntity
             MasterLockEnabled = false,
             LockFoldersByDefault = false,
             AutoRecolorByTimeSensitivity = false,
-            DueSoonWindowHours = 24
+            DueSoonWindowHours = 24,
+            TransparentBackground = false
         };
     }
 
-    public void Update(bool masterLockEnabled, bool lockFoldersByDefault, bool autoRecolorByTimeSensitivity, int dueSoonWindowHours)
+    public void Update(bool masterLockEnabled, bool lockFoldersByDefault, bool autoRecolorByTimeSensitivity, int dueSoonWindowHours, bool transparentBackground)
     {
         MasterLockEnabled = masterLockEnabled;
         LockFoldersByDefault = lockFoldersByDefault;
         AutoRecolorByTimeSensitivity = autoRecolorByTimeSensitivity;
         DueSoonWindowHours = dueSoonWindowHours;
+        TransparentBackground = transparentBackground;
     }
 }

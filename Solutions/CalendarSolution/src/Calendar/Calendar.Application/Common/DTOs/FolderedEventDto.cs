@@ -16,4 +16,4 @@ public record FolderDto(
 
 public record FolderTreeDto(bool MasterLockEnabled, List<FolderDto> Folders);
 
-public record CalendarSettingsDto(bool MasterLockEnabled, bool LockFoldersByDefault, bool AutoRecolorByTimeSensitivity, int DueSoonWindowHours);
+public record CalendarSettingsDto(bool MasterLockEnabled, bool LockFoldersByDefault, bool AutoRecolorByTimeSensitivity, int DueSoonWindowHours, bool TransparentBackground);

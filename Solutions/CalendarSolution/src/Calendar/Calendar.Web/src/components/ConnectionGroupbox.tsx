@@ -8,7 +8,7 @@ import {
   useSaveCredential,
 } from '../lib/queries/platformQueries';
 
-export function ConnectionGroupbox({ config }: { config: PlatformConfig }) {
+export function ConnectionGroupbox({ config, transparent }: { config: PlatformConfig; transparent?: boolean }) {
   const [showForm, setShowForm] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export function ConnectionGroupbox({ config }: { config: PlatformConfig }) {
   const label = followed.data?.length === 1 ? 'VTuber' : 'VTubers';
 
   return (
-    <fieldset className="mt-4 rounded-lg border border-gray-300 bg-white p-5">
+    <fieldset className={`mt-4 rounded-lg border border-gray-300 p-5 ${transparent ? 'bg-white/25 backdrop-blur-sm' : 'bg-white'}`}>
       <legend className="px-2 text-sm font-semibold text-gray-800">{config.label}</legend>
 
       {config.groupboxHint && <p className="mb-2.5 text-xs text-gray-400">{config.groupboxHint}</p>}
